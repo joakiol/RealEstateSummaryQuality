@@ -1,0 +1,277 @@
+# SummaryQuality
+
+This project is part of a master thesis on NTNU, where the goal is to measure the quality of summaries of real-estate condition reports. In this project, weak supervision is first used to obtain noisy labels. Then, various models are trained on these noisy labels, with the objective of making models that can measure the quality of summaries for real-estate condition reports. 
+
+It must be noted that the models are entirely based on weak supervision. This means that the models have **not** been evaluated on data where the true summary quality is known. It is therefore uncertain how accurate the models truly are. Any results should be regarded as an **indication** only, and not as a ground truth. 
+
+The following explains the functionality of this project. A more detailed documentation is found at the end. 
+
+# Usage
+
+This project has not been made as a package. Thus, to work with the functions of this project, the necessary files should be copied into the working directory. This includes the following files: 
+- **common.py**: Contains classes for containing real-estate condition reports. 
+- **data.py**: Classes for making, storing and iterating through datasets. 
+- **weak_supervision.py**: Contains a generative weak-supervision model, based on the Snorkel-framework, for making labels. 
+- **labeling_functions.py**: Contains the labeling functions (with helper functions) that the generative model in weak_supervision.py is based on. 
+- **models.py**: Contains the models that has been implemented in this work. 
+- **utils.py**: Contains useful functions for analysing performance, and various other stuff. 
+
+The necessary packages for these files are found in requirements.txt. 
+
+### Representing real-estate condition reports
+
+Vendu has implemented the class `ConditionReport`, which represents a real-estate condition report. In this project, the class `SummaryReport` has also been implemented. This class inherits from the `ConditionReport` class, and has implemented some additional useful methods for this project. The following function shows how a `SummaryReport`-object can be made from a `ConditionReport`-object. Note that the function returns `None` if either the report or summary is empty, which will be useful for later. 
+
+```python
+from common import ConditionReport, SummaryReport
+
+def make_report(condition_report):
+    """
+    Make SummaryReport-object from ConditionReport-object. 
+    Emtpy reports/summaries will return None. 
+    Returns tuple(id, report)
+    """
+    report = SummaryReport(condition_report)
+    if len(report.condition) > 0 and len(report.summary) > 0:
+        return report.id, report
+    else:
+        return None, None
+```
+
+### Data structure
+
+The models of this work expect data input as an iterable of SummaryReport objects (with corresponding labels, when appropriate). In this project, the iterable class `VenduData` has been implemented for creating and representing datasets. Any iterable of SummaryReport-objects can be used, but in this project we use VenduData-objects for representing datasets, since this is practical. A dataset with the appropriate structure can be made from an iterable of ConditionReport-objects the following way:
+
+```python
+import pickle
+import bz2
+from data import VenduData
+
+print("Loading pickled file...")
+list_of_ConditionReport = pickle.load(bz2.BZ2File('data/VenduData/adjusted_enebolig_reports.pkl', 'rb'), encoding='latin1')
+print("Done!")
+
+data = VenduData(path='data/VenduData/dataset')
+data.make_dataset(iterable=list_of_ConditionReport, func=make_report)
+```
+The above code will save the data to file at './data/VenduData/dataset', and will only have to run once. Afterwards, the dataset can be initialized by:
+```python
+data = VenduData(path='data/VenduData/dataset')
+
+for idx, report in enumerate(data):
+    print(report.id)
+    if idx > 5:
+        break
+```
+
+### Making weak supervision labels
+
+Now that a dataset of appropriate structure has been created, we can train a generative model to make weak supervision labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
+
+```python
+from weak_supervision import GenerativeModel
+
+# Initialize and train model
+model = GenerativeModel()
+model.train(data=data)
+
+# Save trained model
+model.save(modelname='default')
+
+# Load previously saved model
+model = GenerativeModel().load(modelname='default')
+
+# Predict labels on the data that the model was trained on
+labels = model.predict_training_set()
+```
+
+### Making a training, validation and test set
+
+The models in this work expect the input to train-methods to be iterables of `tuple(SummaryReport, tuple(float, float))`, where the first float represents the probability of the summary being bad, while the second float represents the probability of the summary being good, according to the generative model above. To avoid having to make new datasets (thus storing the data twice), the iterable classes `SubsetVenduData` and `LabelledVenduData` has been made. These inherit from the `VenduData`-class, but `SubsetVenduData` only iterates through a subset of the elements in the data, while `LabelledVenduData` also iterates through a subset and returns the labels together with the elements. With these classes, a train, val and test set can easily be made by the following code: 
+
+```python
+from data import SubsetVenduData, LabelledVenduData
+import utils as ut
+
+labels_train, labels_val, labels_test = ut.train_val_test_split(labels, ratio=[0.8, 0.1, 0.1], seed=1)
+train = LabelledVenduData(data=data, labels=labels_train)
+val = LabelledVenduData(data=data, labels=labels_val)
+test = SubsetVenduData(data=data, subset=labels_test.index)
+```
+
+
+# Documentation
+
+## common.py
+  
+-   #### `class Cadastre(Knr, Gnr, Bnr, Fnr, Snr, Anr)`  
+
+    Contains metadata for a property. Implemented by Vendu. 
+    
+    
+-   #### `class Building(build_year, build_type, areal_bra, areal_boa, areal_prom, debt, fortune, constr_cost)`    
+
+    Contains metadata for a building. Implemented by Vendu. 
+  
+  
+-   #### `class PlaceDescription(type, description)`   
+
+    Contains a description concerning the placement of a real-estate. The summary is also a PlaceDescription. Implemented by Vendu. 
+  
+  
+-   #### `class ConditionDescription(type, room, description, assessment, degree)`  
+
+    Contains a description, an assessment and the TG degree for a part of the real-estate. Implemented by Vendu. 
+  
+  
+-   #### `class ConditionReport(id, type, date, author, building, cadastre, place, condition)`  
+
+    Contains a condition report. Implemented by Vendu.  
+    
+    **Parameters**
+    - **`id`**: ID of real-estate condition report.  
+    - **`type`**: Not sure.  
+    - **`date`**: Date of real-estate assessment.  
+    - **`author`**: Author of real-estate condition report.  
+    - **`building`**: Contains metadata about the building. `type Building`.  
+    - **`cadastre`**: Contains metadata about the cadastre. `type Cadastre`.  
+    - **`place`**: Contains placement info of the real-estate. `type list(PlaceDescription)`.  
+    - **`condition`**: Contains condition info of the real-estate. `type list(ConditionDescription)`.  
+  
+  
+-   #### `class SummaryReport(cr)`  
+
+    Extends the `ConditionReport` class, with some useful methods for this project.  
+    
+    **Parameters**  
+    - **`cr`**: A real-estate condition report. `type ConditionReport`.  
+    
+    **Methods**  
+    -   ##### `SummaryReport.get_report_raw()`  
+        **Return:** The complete report text. `type string`.  
+    -   ##### `SummaryReport.get_summary_raw()`  
+        **Return:** The complete summary text. `type string`.  
+    -   ##### `SummaryReport.get_sections()`  
+        **Return:** The sections of the report. `type list(string)`.  
+    -   ##### `SummaryReport.get_report_words()`  
+        **Return:** The words of the report. `type list(string)`.  
+    -   ##### `SummaryReport.get_summary_words()`  
+        **Return:** The words of the summary. `type list(string)`.  
+    -   ##### `SummaryReport.get_report_sentences()`  
+        **Return:** The sentences of the report. `type list(string)`.  
+    -   ##### `SummaryReport.get_summary_sentences()`  
+        **Return:** The sentences of the summary. `type list(string)`.  
+    -   ##### `SummaryReport.get_tokenized_sections()`  
+        **Return:** The tokenized sections of the report. `type list(list(string))`.  
+    -   ##### `SummaryReport.get_report_tokenized_sentences()`  
+        **Return:** The tokenized sentences of the report. `type list(list(string))`.  
+    -   ##### `SummaryReport.get_summary_tokenized_sentences()`  
+        **Return:** The tokenized sentences of the summary. `type list(list(string))`.  
+    
+    
+## data.py
+  
+-   #### `class VenduData(path='data/VenduData/dataset', progress_bar=True, print_list=None, shuffle=1)`
+  
+    General purpuse iterable for data in WebDataset-format. This will be used throughout this project. 
+  
+    **Parameters**  
+    - **`path`**: Path to area where data is stored. `type string`.  
+    - **`progress_bar`**: Indicator of whether progress of loops through data should be shown. `type boolean`.  
+    - **`print_list`**: For each iteration through data, the next string will be printed. `type list(string) or None`.  
+    - **`shuffle`**: Shuffle the dataset with a buffer of size `shuffle`. `shuffle=1` will result in no shuffle. `type int`  
+    
+    **Methods**
+    -   **`VenduData.make_dataset(iterable, func)`**  
+    
+        Make and save dataset to appropriate format from iterable. 
+        
+        **Parameters**  
+        - **`iterable`**: Iterable of elements to add to dataset. 
+        - **`func`**: Function to apply on elements in iterable. Should return (id, element). If `element==None`, it will be omitted. 
+    
+
+-   #### `class SubsetVenduData(data, subset)`  
+
+    Class for iterating through only a subset of elements in data. Inherits from VenduData. 
+
+    **Parameters**  
+    - **`data`**: VenduData-object to make subset from. `type VenduData`.  
+    - **`subset`**: Ids of reports to include. Should be a subset of the ids of the reports in `data`. `type list(string)`.  
+    
+
+-   #### `class LabelledVenduData(data, labels)`  
+
+    Class for adding labels to a subset of elements in data. 
+    Object will be an iterable of tuple(element, tuple(float, float)), where
+    the first float represents the probability of the summary being bad, and the 
+    second float is the probability of summary being good. 
+
+    **Parameters**  
+    - **`data`**: VenduData-object to make subset from. `type VenduData`.  
+    - **`labels`**: Probabilistic labels, where report ids are expected to be found in the index. `type pandas.DataFrame` 
+
+
+## weak_supervision.py 
+  
+-   #### `class GenerativeModel()`  
+
+    Class for weak supervision generative model, used for making labels.  
+    
+    **Methods**  
+  
+    -   **`GenerativeModel.train(data)`**  
+   
+        Trains the model on the input data.  
+        
+        - **Parameter `data`**: Data for training the generative model. `type iterable(SummaryReport)` 
+          
+          
+    -   **`GenerativeModel.predict(data)`**  
+    
+        Fit model on data.  
+         
+        - **Parameter `data`**: Data to be labelled by the model. `type iterable(SummaryReport)`.  
+          
+        - **Return:** Probabilistic labels for input data, with ids on the index. `type pandas.DataFrame`.  
+          
+          
+    -   **`GenerativeModel.predict_training_set()`**  
+    
+        Fit model on training data. Much faster than calling `predict(data=training_data)`.  
+      
+        - **Return:** Probabilistic labels for the data that the model was trained on, with ids on the index. `type pandas.DataFrame`.  
+          
+            
+    -   **`GenerativeModel.save(modelname='default')`**  
+    
+        Save model to file.  
+        
+        - **Parameter `modelname`**: Give name to the model. Filename will be based on this name. `type string`.  
+          
+          
+    -   **`GenerativeModel.load(modelname='default')`**  
+    
+        Load model from file.  
+      
+        - **Parameter `modelname`**: Name of model to load. Filename is based on this name. `type string`.  
+        
+        - **Return:** Self, so that one can write `model = GenerativeModel.load(modelname)`. `type GenerativeModel`.  
+   
+
+## utils.py
+
+  
+-   #### `function train_val_test_split(labels, ratio=[0.8, 0.1, 0.1], seed=1)`  
+  
+    Split input data into a train, val and test set. 
+  
+    **Parameters**  
+    - **`labels`**: Complete set of labels to divide into train/val/test. `type pandas.DataFrame`.  
+    - **`ratio`**: Relative size that train/val/test set should have. `type list(float)`.  
+    - **`seed`**: Random state to use for splitting. `type int`.  
+    
+    **Return**  
+    - Labels for training set, with ids on the index. `type pandas.DataFrame`.  
+    - Labels for validation set, with ids on the index. `type pandas.DataFrame`.    
+    - Labels for test set, with ids on the index. `type pandas.DataFrame`.    
