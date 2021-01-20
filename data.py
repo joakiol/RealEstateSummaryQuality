@@ -11,6 +11,8 @@ class progress_bar:
     def __init__(self, iterator, length):
         """Iterator wrapper class for printing progress. Takes an iterator with a given
         length as input, and becomes an iterator that is the same, but also prints progress. 
+        Especially convenient for training Word2vec/Doc2vec since these passes several times 
+        over the data without much possibility of printing progress. 
 
         Args:
             iterator (iterator): Input iterator to add progress bar. 
@@ -43,24 +45,7 @@ class progress_bar:
         if self.index == self.length:
             sys.stdout.write('\n')
         sys.stdout.flush()
-
-class PrintIterator:
-    def __init__(self, iterable, length):
-        """Iterable class that takes an arbitrary iterable as input, and adds a 
-        progress bar to any iterations over it. Especially convenient for training 
-        Word2vec/Doc2vec since these passes several times over the data without much 
-        possibility of printing progress. 
-
-        Args:
-            iterable (iterable): Iterable to wrap in progress bar. 
-            length (int): length of input iterable. 
-        """        
-        self.iterable = iterable
-        self.length = length
-
-    def __iter__(self):
-        return progress_bar(iter(self.iterable), self.length)
-
+        
 
 class buffer_shuffler:
     def __init__(self, iterator, apply, buffer_size=1):
