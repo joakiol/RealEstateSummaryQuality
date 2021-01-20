@@ -11,22 +11,34 @@ import random
 
 
 def train_val_test_split(labels, ratio=[0.8, 0.1, 0.1], seed=1):
-    """
-    Split input data into a train, val and test set. 
+    """Split input data into a train, val and test set. 
 
-    :param labels: Complete set of labels to divide into train/val/test. 
-    :param ratio: List of float, with relative size that train/val/test set should have. 
-    :param seed: Random state to use for splitting. 
+    Args:
+        labels (pd.DataFrame): Labels with report ids in index. 
+        ratio (list, optional): Size of train, val and test. Defaults to [0.8, 0.1, 0.1].
+        seed (int, optional): Seed for shuffling. Defaults to 1.
 
-    :return: `df_train, df_val, df_test` as 3 pandas df with labels for different reports. 
-    """
+    Returns:
+        probs_train (pd.DataFrame): Dataframe with labels for training set. 
+        probs_val (pd.DataFrame): Dataframe with labels for validation set. 
+        probs_test (pd.DataFrame): Dataframe with labels for test set. 
+    """    
+    
     probs_trainval, probs_test = train_test_split(labels, test_size=ratio[2], random_state=seed)
     probs_train, probs_val = train_test_split(probs_trainval, test_size=ratio[1]/(ratio[0]+ratio[1]), random_state=seed)
     return probs_train, probs_val, probs_test
 
 def score_readability(sentences, words):
-    """Function to score liks and ovr. """
+    """Function to score liks and ovr.
 
+    Args:
+        sentences (list[str]): List of sentences in text to score. 
+        words (list[str]): List of words in text to score
+
+    Returns:
+        liks (float): LIKS score for input text (represented as list of sentences and words)
+        ovr (float): OVR score for input text (represented as list of sentences and words)
+    """    
     words = [word for word in words if word not in ('.', ',')]
 
     word_count = len(words)
@@ -46,56 +58,23 @@ def score_readability(sentences, words):
 
     return liks, ovr
 
-def measure_quality(model, datapath):
-    """
-    Measure quality of reports in data at datapath, using the input model.
+def plot_quality(quality, labels=False, name=False, title=False, lab=False, show=True, all=False, density=True, xlim=True):
+    """Plot two distributions, one for good summaries, and one for bad.
 
-    :param model: Model to use for quality measurement. 
-    :param datapath: Path to data in webdataset-format, that is to be measured. 
-
-    :return: Pandas series with ids and quality from model. 
-    """
-    data = wds.Dataset(datapath).decode()
-
-    print("Calculating distances for data...")
-    index = 0
-        
-    keys = []
-    distances = []
-    for house in data:
-        index += 1 
-        if index % 100 == 0:
-            print('\r%i' % index, end='')
-        keys.append(house['__key__'])
-        distances.append(model(report=house['report.pyd'], summary=house['summary.pyd']))
-
-    print("\nDone!")
-
-    return pd.Series(distances, index=keys)
-
-def plot_labels(labels):
-
-    plt.figure(figsize=(8,5))
-    plt.rcParams.update({'font.size': 22})
-    plt.rc('text', usetex=True)
-    plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
-    plt.hist(labels['prob_good'], bins=50, density=True, facecolor='blue', alpha=0.5)
-    plt.xlabel(r'$P_{\boldsymbol{\mathbf{\mu}}}(y=1 \: | \: \boldsymbol{\mathbf{\lambda}})$')
-    plt.ylabel('Density')
-    plt.tight_layout()
-    plt.savefig('plot/labeldensity.png')
-    plt.show()
-
-
-
-
-
-
-def plot_quality(quality, labels=False, name=False, title=False, lab=False, include_t=False, show=True, all=False, density=True, xlim=True):
-    """
-    Plot two densities, one for distance to own report, the other for distance to other reports.
-    """ 
-
+    Args:
+        quality (list[float]): Quality measures to plot. 
+        labels (bool, optional): Labels to use for determining which are good and bad summaries. 
+                                 Defaults to False, in which case only one distribution are shown.
+        name (str, optional): Save name. Defaults to False (no saving).
+        title (str, optional): Title. Defaults to False (No title).
+        lab (bool, optional): Whether labels should be shown in plot. Defaults to False.
+        show (bool, optional): Whether to show plot. Defaults to True.
+        all (bool, optional): Whether distribution of all should be shown in grey. 
+                              Defaults to False.
+        density (bool, optional): Whether normalization of distributions should be performed. 
+                                  Defaults to True.
+        xlim (bool, optional): Whether plots should be shown on [-1, 1]. Defaults to True.
+    """    
     if type(labels) == type(pd.DataFrame()):
         good_idx = labels[labels['prob_bad'] <= 0.1].index
         medium_idx = labels[(labels['prob_bad'] > 0.1) & (labels['prob_bad'] < 0.9)].index
@@ -104,8 +83,6 @@ def plot_quality(quality, labels=False, name=False, title=False, lab=False, incl
         medium = quality[medium_idx]
         bad = quality[bad_idx]
 
-
-    # Plot histogram
     plt.figure(figsize=(8,5))
     plt.rcParams.update({'font.size': 22})
     #plt.rcParams.update({'font.size': 16})
@@ -118,9 +95,6 @@ def plot_quality(quality, labels=False, name=False, title=False, lab=False, incl
         plt.hist(bad, bins=50, density=density, facecolor='r', alpha=0.5, label=r'$P_{\boldsymbol{\mathbf{\mu}}}(y=1 \: | \: \boldsymbol{\mathbf{\lambda}}) \leq 0.1$')
     else:
         plt.hist(quality, bins=50, density=density, facecolor='blue', alpha=0.5)
-
-
-    #plt.hist(medium, bins=100, density=True, facecolor='y', alpha=0.5, label="Medium")
    
     if title:
         plt.title(title)
@@ -129,29 +103,17 @@ def plot_quality(quality, labels=False, name=False, title=False, lab=False, incl
     plt.xlabel(r'$q(\boldsymbol{\mathbf{r}}, \boldsymbol{\mathbf{s}})$')
     plt.ylabel('Density')
     if lab:
-        #plt.legend()
-        plt.legend(framealpha=0.4, loc='upper left')
-
+        plt.legend()
+        #plt.legend(framealpha=0.4, loc='upper left')
     plt.tight_layout()
-
     if name:
         plt.savefig('plot/%s' % name)
     if show:
         plt.show()
 
-def best_margin_loss(quality, labels):
-    
-    best_margin = -1
-    best_loss = np.inf
-    for margin in np.linspace(-1, 1, 400):
-        loss = noise_aware_cosine_loss(quality, labels, margin, margin)
-        if loss < best_loss:
-            best_loss = loss
-            best_margin = margin
-
-    return best_loss, best_margin
 
 def func1(x, y, tau_good, tau_bad):
+    """Cosine embedding loss"""    
     if y==1:
         return [max(0, tau_good-i) for i in x]
     if y==-1:
@@ -159,6 +121,13 @@ def func1(x, y, tau_good, tau_bad):
     return
 
 def plot_loss(tau_good, tau_bad, save=False):
+    """Plot loss function
+
+    Args:
+        tau_good (float): Tau_good for plot. 
+        tau_bad ([type]): Tau_bad for plot. 
+        save (str, optional): Save name. Defaults to False (no saving).
+    """    
     plt.figure(figsize=(8,5))
     plt.rcParams.update({'font.size': 26})
     plt.rc('text', usetex=True)
@@ -175,14 +144,18 @@ def plot_loss(tau_good, tau_bad, save=False):
         plt.savefig(save)
     plt.show()
 
-    
-
-    
-
 def noise_aware_cosine_loss(quality, labels, tau_good, tau_bad):
-    """
-    Calculates a noise aware cosine similarity loss.
-    """
+    """Calculates a noise aware cosine similarity loss for a set of qualities/labels.
+
+    Args:
+        quality (pd.Series): Predicted qualities, with ids on index. 
+        labels (pd.DataFrame): Labels, with ids on index. 
+        tau_good (float): Which tau_good to use for loss function. 
+        tau_bad (float): Which tau_bad to use for loss function. 
+
+    Returns:
+        float: Noise aware cosine embedding loss for input qualities (with labels). 
+    """    
     labels['quality'] = quality
     good = np.clip(tau_good - labels['quality'], a_min=0, a_max=2)
     bad = np.clip(labels['quality'] - tau_bad, a_min=0, a_max=2)
@@ -190,7 +163,15 @@ def noise_aware_cosine_loss(quality, labels, tau_good, tau_bad):
     return labels['loss'].mean()
 
 def get_best_threshold(quality, labels):
-    """Gets maximum accuracy threshold to use for classification. """
+    """Get maximum-accuracy threshold to use for classification.
+
+    Args:
+        quality (pd.Series): Predicted qualities, with ids on index. 
+        labels (pd.DataFrame): Labels, with ids on index. 
+
+    Returns:
+        float: Threshold that maximizes accuracy. 
+    """    
     labels['quality'] = quality
     labels['y'] = (labels['prob_good'] > labels['prob_bad']).astype(int)
 
@@ -207,10 +188,20 @@ def get_best_threshold(quality, labels):
     return best_threshold
 
 def classification_scores(quality, labels, best_threshold):
-    """
-    Calculates accuracy, recall, precision and F1-score on the most probable labels, by using a 
+    """Calculates accuracy, recall, precision and F1-score on the labels, by using a 
     "maximum accuracy" threshold for classifying
-    """
+
+    Args:
+        quality (pd.Series): Predicted qualities, with ids on index. 
+        labels (pd.DataFrame): Labels, with ids on index. 
+        best_threshold (float): Threshold to use for classifying good/bad summaries. 
+
+    Returns:
+        accuracy (float): Accuracy for given qualities and threshold. 
+        precision (float): Precision for given qualities and threshold. 
+        recall (float): Recall for given qualities and threshold. 
+        f_one (float): F1_score for given qualities and threshold. 
+    """    
     labels['quality'] = quality
     labels['y'] = (labels['prob_good'] > labels['prob_bad']).astype(int)
     labels['predicted_y'] = (labels['quality'] >= best_threshold).astype(int)
@@ -222,112 +213,11 @@ def classification_scores(quality, labels, best_threshold):
 
 
 class EpochLogger(CallbackAny2Vec):
-    '''Callback to log information about training'''
-
     def __init__(self):
+        """Callback for logging number of epochs in Word2vec/Doc2vec."""        
         self.epoch = 0
 
     def on_epoch_begin(self, model):
         self.epoch += 1
         print("\nEpoch %i" % self.epoch)
-
-
-class progress_bar:
-    def __init__(self, iterable, length):
-        self.iterator = iter(iterable)
-        self.index = 0
-        self.starttime = time.time()
-        self.lasttime = self.starttime
-        self.length = length
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self.index += 1
-        if time.time() > (self.lasttime + 1) or self.index == self.length:
-            self._print_progress()
-        return next(self.iterator)
-
-    def __len__(self):
-        return self.length
-
-    def _print_progress(self):
-        self.lasttime = time.time()
-        minutes = (time.time()-self.starttime) // 60
-        seconds = (time.time()-self.starttime) % 60
-        if self.length != None:
-            x = int(60*self.index/self.length)
-            sys.stdout.write("[%s%s%s]  %i/%i  %02d:%02d \r" % ("="*x, '>'*int(60>x), "."*(60-x-1), self.index, self.length, minutes, seconds))  
-        else:
-            sys.stdout.write("%i  %02d:%02d \r" % (self.index, minutes, seconds))
-        if self.index == self.length:
-            sys.stdout.write('\n')
-        sys.stdout.flush()
-
-
-class ProgressBar:
-    def __init__(self, iterable):
-        self.iterable = iterable
-        try:
-            self.length = len(iterable)
-        except:
-            self.length = None
-
-    def __iter__(self):
-        return progress_bar(self.iterable, self.length)
-
-    def __len__(self):
-        return self.length
-
-
-class buffer_randomizer:
-    def __init__(self, iterable, length, buffer_size, func):
-        self.iterator = iter(iterable)
-        self.length = length
-        self.buffer_size = buffer_size
-        self.func = func
-        self.complete = False
-        self.index = 0
-        self.buffer = []
-        while len(self.buffer) < self.buffer_size:
-            self.buffer.extend(self.func(next(self.iterator)))
-            self.index += 1
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if (self.complete == False) and (len(self.buffer) < self.buffer_size):
-            try:
-                self.buffer.extend(self.func(next(self.iterator)))
-                self.index += 1
-            except StopIteration:
-                self.complete = True
-
-        try:
-            newindex = random.randint(0, (len(self.buffer)-1))
-            to_return = self.buffer.pop(newindex)
-        except:
-            raise StopIteration
-        
-        return to_return
-
-    def __len__(self):
-        return self.length
-
-
-class BufferShuffler:
-    def __init__(self, iterable, buffer_size, func):
-        self.iterable = iterable
-        self.buffer_size = buffer_size
-        self.func = func
-        try:
-            self.length = len(iterable)
-        except:
-            self.length = None
-
-    def __iter__(self):
-        return buffer_randomizer(self.iterable, self.length, self.buffer_size, self.func)
-
         
