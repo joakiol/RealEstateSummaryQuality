@@ -6,7 +6,17 @@ import numpy as np
 
 class NetworkTrainer:
     def __init__(self, model, tau_good, tau_bad, batch_size, lr, update_step_every, epochs):
+        """Trainer class for training pytorch networks, as well as predicting qualities. 
 
+        Args:
+            model (network object (FFN/LSTM/CNN)): Model to train. 
+            tau_good (float): Which tau_good to use for training. 
+            tau_bad (float): Which tau_bad to use for training. 
+            batch_size (int): Batch size for training
+            lr (float): Initial learning rate for training. 
+            update_step_every (int): How many epochs to perform before updating learning rate. 
+            epochs (int): Number of training epochs. 
+        """
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = model.to(self.device)
         self.tau_good = tau_good
@@ -17,20 +27,15 @@ class NetworkTrainer:
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, update_step_every, gamma=0.1)
 
     def _training_step(self, train_loader):
-
         trainLoss = 0
         trainAccuracy = 0
         length = 0
         self.model.train()
         for report_batch, summary_batch, label_batch in train_loader:
-
             length += label_batch.shape[0]
-            
             self.optimizer.zero_grad()
             z_r, z_s = self.model(report_batch.to(self.device), summary_batch.to(self.device))
             train_loss = cosine_loss(z_r, z_s, label_batch.to(self.device), self.tau_good, self.tau_bad, self.device)
-            #train_loss = self.loss.loss(z_r, z_s,  label_batch.to(self.device))
-            #train_loss = noise_aware_cosine_loss(z_r, z_s, label_batch.to(self.device), self.device)
             train_loss.backward()
             self.optimizer.step()
             trainLoss += train_loss.item()
@@ -38,7 +43,6 @@ class NetworkTrainer:
         return trainLoss/length
 
     def _validation_step(self, val_loader):
-
         with torch.no_grad():
             self.model.eval()
             valLoss = 0
@@ -48,18 +52,24 @@ class NetworkTrainer:
                 length += label_batch.shape[0]
                 z_r, z_s = self.model(report_batch.to(self.device), summary_batch.to(self.device))
                 val_loss = cosine_loss(z_r, z_s, label_batch.to(self.device), self.tau_good, self.tau_bad, self.device)
-                #val_loss = self.loss.loss(z_r, z_s,  label_batch.to(self.device))
-                #val_loss = noise_aware_cosine_loss(z_r, z_s, label_batch.to(self.device), self.device)
-                #val_acc = pp.accuracy(predY, batchY)
                 valLoss += val_loss.item()
-                #valAccuracy += val_acc.item()
         return valLoss/length
 
     def _unpack_data_train(self, element):
         return (element['report.pth'], element['summary.pth'], element['labels.pth'])
 
     def train(self, train_path, val_path, collate=None):
+        """Train neural network
 
+        Args:
+            train_path (str): Path to training data. 
+            val_path (str): Path to validation data. 
+            collate (func, optional): Collate func is used with LSTM, for packed sequence stuff. 
+                                      Defaults to None.
+
+        Returns:
+            network object (FFN/LSTM/CNN): Trained neural network. 
+        """        
         train = ReportData(train_path, shuffle_buffer_size=1000, apply=self._unpack_data_train, 
                                         batch_size=self.batch_size, collate=collate)
         if val_path != None:
@@ -86,7 +96,20 @@ class NetworkTrainer:
         return (element['__key__'], element['report.pth'], element['summary.pth'])
 
     def embed(self, path, print_progress, collate=None):
+        """Generator for embedding data at input path in a memory-friendly fashion. 
+        Creates reports and summaries in the conceptual summary content space, where
+        summary quality can be measured by cosine similarity. 
 
+        Args:
+            path (str): Path to data to embed. 
+            print_progress (boolean): Whether to print progress of embedding. 
+            collate (func, optional): Collate func is used with LSTM, for packed sequence stuff. 
+                                      Defaults to None.
+
+        Yields:
+            dict{'id', 'z_r', 'z_s'}: Dictionary with id, embedder report (z_r) and embedded 
+                                      summary (z_s). 
+        """
         data = ReportData(path, apply=self._unpack_data_test, batch_size=self.batch_size, 
                                 print_progress=print_progress, collate=collate)
         with torch.no_grad():
@@ -106,74 +129,17 @@ class NetworkTrainer:
                 yield {'id': keys.pop(0), 'z_r': z_r.pop(0), 'z_s': z_s.pop(0)}
 
 
-
-class LSTM(nn.Module):
-    def __init__(self, input_nodes, lstm_dim, num_lstm, bi_dir, output_dim, dropout, embedding=None):
-        super(LSTM, self).__init__()
-
-        if embedding != None:
-            self.embedding = nn.Embedding(input_nodes+1, embedding, padding_idx=0)
-            self.lstm = nn.LSTM(embedding, lstm_dim, num_layers=num_lstm, dropout=dropout, batch_first=True, bidirectional=bi_dir)
-        else:
-            self.embedding = None
-            self.lstm = nn.LSTM(input_nodes, lstm_dim, num_layers=num_lstm, dropout=dropout, bidirectional=bi_dir)
-
-        self.output_layer = nn.Linear(lstm_dim, output_dim)
-        self.dropout = nn.Dropout(p=dropout)
-        
-
-    def forward(self, z_r, z_s):
-
-        if self.embedding != None:
-            z_r, z_s = self.embedding(z_r.long()), self.embedding(z_s.long())
-
-        lstm_out_r, (ht_r, ct_r) = self.lstm(z_r)
-        lstm_out_s, (ht_s, ct_s) = self.lstm(z_s)
-        z_r_out = self.dropout(ht_r[-1])
-        z_s_out = self.dropout(ht_s[-1])
-        return self.output_layer(z_r_out), self.output_layer(z_s_out)
-
-class Attn(nn.Module):
-    def __init__(self, input_nodes, attn_dim, num_attn, output_dim, dropout):
-        super(Attn, self).__init__()
-
-        self.key = nn.Linear(input_nodes, attn_dim)
-        self.query = nn.Linear(input_nodes, attn_dim)
-        self.value = nn.Linear(input_nodes, attn_dim)
-
-        self.attn = nn.MultiheadAttention(input_nodes, num_attn, dropout=dropout)
-        self.lstm = nn.LSTM(input_nodes, attn_dim, num_layers=num_attn, dropout=dropout)
-
-        self.output_layer = nn.Linear(attn_dim, output_dim)
-        self.dropout = nn.Dropout(p=dropout)
-        
-
-    def forward(self, z_r, z_s):
-
-        z_r = nn.utils.rnn.pad_packed_sequence(z_r)
-        z_s = nn.utils.rnn.pad_packed_sequence(z_s)
-
-        Q = self.query(z_r[0])
-        K = self.key(z_s[0])
-        V = self.value(z_s[0])
-
-        attn_output, _ = self.attn(Q, K, V)
-
-        lstm_out_r, (ht_r, ct_r) = self.lstm(z_r[0])
-        lstm_out_s, (ht_s, ct_s) = self.lstm(attn_output)
-        z_r_out = self.dropout(ht_r[-1])
-        z_s_out = self.dropout(ht_s[-1])
-        return self.output_layer(z_r_out), self.output_layer(z_s_out)
-
-       
-        #return 
-
-
 class FFN(nn.Module):
     def __init__(self, input_nodes, layers, dropout):
+        """FFN network class. See master thesis for architecture details. 
+
+        Args:
+            input_nodes (int): Dimensionality of input embeddings. 
+            layers (list[int]): Number of nodes to use in each layer. Number of layers 
+                                becomes length of layers list. 
+            dropout (float): Dropout rate. 
+        """        
         super(FFN, self).__init__()
-
-
         self.layers = [nn.Linear(input_nodes, layers[0])]
         for i in range(len(layers) - 1):
             self.layers.append(nn.Linear(layers[i], layers[i+1]))
@@ -183,6 +149,16 @@ class FFN(nn.Module):
         self.batchnorm = nn.ModuleList([nn.BatchNorm1d(layers[i]) for i in range(len(layers) - 1)])
 
     def forward(self, r, s):
+        """Applies network on batch of reports and summaries.
+
+        Args:
+            r (tensor): Report batch, already embedded by LSA/Doc2vec
+            s (tensor): Summary batch, already embedded by LSA/Doc2vec
+
+        Returns:
+            z_r (tensor): Output embeddings of report batch, ready for measuring quality (cossim).
+            z_s (tensor): Output embeddings of summary batch, ready for measuring quality (cossim).
+        """        
         for i in range(len(self.layers) - 1):
             r = self.layers[i](r)
             r = self.relu(r)
@@ -198,11 +174,58 @@ class FFN(nn.Module):
         z_s = self.layers[-1](s)
         return z_r, z_s
 
+
+class LSTM(nn.Module):
+    def __init__(self, input_nodes, lstm_dim, num_lstm, bi_dir, output_dim, dropout):
+        """LSTM network class. See master thesis for architecture details. 
+
+        Args:
+            input_nodes (int): Dimensionality of input embeddings. 
+            lstm_dim (int): Dimensionality of LSTM cell. 
+            num_lstm (int): Number of LSTM layers. 
+            bi_dir (boolean): Whether bi-directional LSTM layers are employed or not. 
+            output_dim (int): Output dimensionality of final, fully connected linear layer. 
+            dropout (float): Dropout rate. 
+        """        
+        super(LSTM, self).__init__()
+        self.lstm = nn.LSTM(input_nodes, lstm_dim, num_layers=num_lstm, dropout=dropout, bidirectional=bi_dir)
+        self.output_layer = nn.Linear(lstm_dim, output_dim)
+        self.dropout = nn.Dropout(p=dropout)
+        
+
+    def forward(self, r, s):
+        """Applies network on batch of reports and summaries.
+
+        Args:
+            r (tensor): Report batch, already embedded by LSA/Doc2vec
+            s (tensor): Summary batch, already embedded by LSA/Doc2vec
+
+        Returns:
+            z_r (tensor): Output embeddings of report batch, ready for measuring quality(cossim).
+            z_s (tensor): Output embeddings of summary batch, ready for measuring quality(cossim).
+        """     
+        lstm_out_r, (ht_r, ct_r) = self.lstm(r)
+        lstm_out_s, (ht_s, ct_s) = self.lstm(s)
+        z_r_out = self.dropout(ht_r[-1])
+        z_s_out = self.dropout(ht_s[-1])
+        return self.output_layer(z_r_out), self.output_layer(z_s_out)
+
+
+
 class CNN(nn.Module):
     def __init__(self, params, embedding_size, output_size, kernels, dropout):
-        super(CNN, self).__init__()
+        """CNN network class. See master thesis for architecture details. 
 
-        # Define embedding layers
+        Args:
+            params (dict{vocab_length/emb_matrix}): Parameters from embedder, which holds
+                                                    necessary information. 
+            embedding_size (int): Dimensionality of word embeddings in EmbLayer/Word2vec. 
+            output_size (int): Number of filters per filter size and nodes in final linear layer.
+            kernels (list[int]): List of filter sizes. Total number of filters becomes
+                                 len(kernels)*output_size. 
+            dropout (float): Dropout rate. 
+        """        
+        super(CNN, self).__init__()
         if 'vocab_length' in params.keys():
             vocab_length = params['vocab_length']
             self.embedding = nn.Embedding(vocab_length+1, embedding_size, padding_idx=0)
@@ -210,33 +233,31 @@ class CNN(nn.Module):
             wordvectors = params['emb_matrix'].vectors
             zeros = np.zeros((1, len(wordvectors[0])))
             wordvectors = np.concatenate((zeros, wordvectors), axis=0)
-            
-            print(len(wordvectors), len(wordvectors[0]))
             self.embedding = nn.Embedding(len(wordvectors), len(wordvectors[0]), padding_idx=0)
             self.embedding.weight = nn.Parameter(torch.from_numpy(wordvectors).float())
             self.embedding.weight.requires_grad = False
 
-        # Define convolution layers
         self.layers = nn.ModuleList(
             [nn.Conv2d(1, output_size, [kernel_size, embedding_size], padding=(kernel_size-1, 0)) 
             for kernel_size in kernels]
         )
-        
-        # Define max pooling layers
-        #self.pool = nn.ModuleList([nn.MaxPool1d(kernel_size) for kernel_size in kernels])
-       
-        # Define fully connected linear layer
         self.linear = nn.Linear(output_size*len(kernels), output_size)
-
-        #  Define activation layer
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=dropout)
-        #self.batchnorm = nn.ModuleList([nn.BatchNorm1d(layers[i]) for i in range(len(layers) - 1)])
-
+        
     def forward(self, r, s):
+        """Applies network on batch of reports and summaries.
 
+        Args:
+            r (tensor): Report batch, already embedded by VocabularyEmbedder/Word2vec.
+            s (tensor): Summary batch, already embedded by VocabularyEmbedder/Word2vec.
+
+        Returns:
+            z_r (tensor): Output embeddings of report batch, ready for measuring quality(cossim).
+            z_s (tensor): Output embeddings of summary batch, ready for measuring quality(cossim).
+
+        """
         r, s = self.embedding(r.long()), self.embedding(s.long())
-
         r, s = torch.unsqueeze(r, 1), torch.unsqueeze(s, 1)
         r_list, s_list = [], []
         for i, conv in enumerate(self.layers):
@@ -253,18 +274,20 @@ class CNN(nn.Module):
         return self.linear(r), self.linear(s)
 
 
-
-
-# class NoiseAwareLoss(nn.CosineSimilarity):
-#     def __init__(self, device,):
-#         super(NoiseAwareLoss, self).__init__()
-#         self.device = device
-
-#     def loss(z_r, z_s, labels):
-#         cos_sim = self(z_r, z_s)
-#         return torch.sum(labels[:,0]*torch.clamp())
-
 def cosine_loss(z_r, z_s, labels, tau_good, tau_bad, device):
+    """Noise aware cosine embedding loss, to use for training networks. 
+
+    Args:
+        z_r (tensor): Report batch embedded by neural network. 
+        z_s (tensor): Summary batch embedded by neural network. 
+        labels (tensor): Labels for batch. 
+        tau_good (float): Which tau_good to use in loss function. 
+        tau_bad (float): Which tau_bad to use in loss function. 
+        device (str): Device for calculating loss, in case of cuda. 
+
+    Returns:
+        float: Sum of loss for reports/summaries in the batch. 
+    """    
     z_r = nn.functional.normalize(z_r, p=2, dim=1)
     z_s = nn.functional.normalize(z_s, p=2, dim=1)
     cos_sim = torch.sum(z_r*z_s, dim=1)
@@ -272,43 +295,3 @@ def cosine_loss(z_r, z_s, labels, tau_good, tau_bad, device):
     good = torch.clamp(tau_good * ones - cos_sim, min=0)
     bad = torch.clamp(cos_sim - tau_bad * ones, min=0)
     return torch.sum(labels[:,0] * bad + labels[:,1] * good)
-
-# class CosineLoss:
-#     def __init__(self, tau_good, tau_bad, device):
-#         self.tau_good = tau_good
-#         self.tau_bad = tau_bad
-#         self.cosine = nn.CosineSimilarity()
-#         self.device = device
-
-#     def loss(self, z_r, z_s, labels):
-
-#         length = z_r.shape[0]
-#         ones = torch.ones(length, dtype=torch.int32, device=self.device)
-#         cos_sim = self.cosine(z_r, z_s)
-
-#         good = torch.clamp(self.tau_good * ones - cos_sim, min=0)
-#         bad = torch.clamp(cos_sim - self.tau_bad * ones, min=0)
-#         return torch.sum(labels[:,0] * bad + labels[:,1] * good)
-
-
-# def noise_aware_cosine_loss(z_r, z_s, labels, device):
-
-#     #cos_sim = nn.CosineSimilarity()
-
-#     good = torch.ones([z_r.shape[0], 1], dtype=torch.int32, device=device)
-#     bad = -torch.ones([z_r.shape[0], 1], dtype=torch.int32, device=device)
-
-#     loss_good = F.cosine_embedding_loss(z_r, z_s, good, reduction='none', margin=-1)
-#     loss_bad = F.cosine_embedding_loss(z_r, z_s, bad, reduction='none', margin=-1)
-#     return torch.sum((labels[:,0] * loss_bad[0]) + labels[:,1] * (torch.clamp(loss_good[0], min=0) - 0*torch.ones(len(loss_good[0]), dtype=torch.int32, device=device)) )
-    
-
-# class NoiseAwareCosineLoss(nn.Module):
-#     def __init__(self, batch_size):
-#         super(NoiseAwareCosineLoss, self).__init__()
-#         self.batch_size = batch_size
-
-#     def forward(self, input1, input2, target):
-#         loss_good = F.cosine_embedding_loss(input1, input2, torch.ones([self.batch_size, 1], dtype=torch.int32), reduction='none')
-#         loss_bad = F.cosine_embedding_loss(input1, input2, torch.zeros([self.batch_size, 1], dtype=torch.int32), reduction='none')
-#         return torch.dot(target[:,0].float(), loss_bad[0]) + torch.dot(target[:,1].float(), loss_good[0])
