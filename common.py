@@ -125,20 +125,25 @@ class ConditionReport:
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 class SummaryReport(ConditionReport):
-    """Extends the `ConditionReport` class, with some useful functions for this project."""
     def __init__(self, cr):
-        """
-        Constructor for report. 
+        """Extends the `ConditionReport` class, with some useful functions 
+        for the summary quality project.
 
-        :param cr: ConditionReport object. A real-estate condition report.     
-        """
+        Args:
+            cr (ConditionReport): A real-estate condition report, 
+                                 class object as implemented by Vendu. 
+        """        
         super(SummaryReport, self).__init__(cr.id, cr.type, cr.date, cr.author, 
                                      cr.building, cr.cadastre, cr.place, cr.condition)
         self.summary = self._find_summary()
         self._clean()
 
     def _find_summary(self):
-        """Set summary from place number 19/20, after cleaning. """
+        """Set summary from place type 19/20, after cleaning.
+
+        Returns:
+            str: Cleaned textual summary of real estate condition report. 
+        """        
         summary = ''
         seen = set()
         for element in self.place:
@@ -149,12 +154,18 @@ class SummaryReport(ConditionReport):
         return summary.strip()
 
     def _clean_text(self, text):
-        """
-        Cleans a string input the following way: 
+        """Cleans a string input the following way: 
         - ensure period at end. 
         - ensure no trailing spaces. 
         - ensure no double space or period. 
-        """
+        - ensure no double '/'.
+
+        Args:
+            text (str): Input text to clean.
+
+        Returns:
+            str: Clean version of input text. 
+        """        
         space_re = re.compile(r"\s+")
         dot_re = re.compile(r"\.\.+")
 
@@ -174,7 +185,11 @@ class SummaryReport(ConditionReport):
         return text
 
     def _clean(self):
-        """Clean condition in report. Summary was already cleaned under construction. """
+        """Clean textual conditions in report. Summary was already cleaned under construction. 
+
+        Returns:
+            list(ConditionDescription): List of cleaned ConditionDescription objects. 
+        """        
         new_condition = []
         seen = set()
 
@@ -193,7 +208,11 @@ class SummaryReport(ConditionReport):
         return self
 
     def get_report_raw(self):
-        """Return the complete report text, as a raw string."""
+        """Return the complete report text, as a raw string. Summary is not included. 
+
+        Returns:
+            str: Raw text of report body. 
+        """
         text = ''
         for element in self.condition:
             if element.description == '':
@@ -205,11 +224,19 @@ class SummaryReport(ConditionReport):
         return text.strip()
 
     def get_summary_raw(self):
-        """Return the complete summary text, as a raw string."""
+        """Return the complete summary text, as a raw string.
+
+        Returns:
+            str: Raw text of summary. 
+        """        
         return self.summary
 
     def get_sections(self):
-        """Return the sections of the report, as a list of strings."""
+        """Return the sections of the report, as a list of strings.
+
+        Returns:
+            list[str]: List of sections in report body. 
+        """        
         report = []
         for element in self.condition:
             if element.description == '':
@@ -222,41 +249,69 @@ class SummaryReport(ConditionReport):
         return report
 
     def get_report_words(self):
-        """Return the words of the report, as a list of strings."""
+        """Return the words of the report, as a list of strings.
+
+        Returns:
+            list[str]: List of words in report body. 
+        """        
         raw = self.get_report_raw()
         report = [word.lower() for word in nltk.word_tokenize(raw, language='norwegian')]
         return report
 
     def get_summary_words(self):
-        """Return the words of the summary, as a list of strings."""
+        """Return the words of the summary, as a list of strings.
+
+        Returns:
+            list[str]: List of words in summary. 
+        """        
         summary = [word.lower() for word in nltk.word_tokenize(self.summary, language='norwegian')]
         return summary
 
     def get_report_sentences(self):
-        """Return the sentences of the report, as a list of strings."""
+        """Return the sentences of the report, as a list of strings.
+
+        Returns:
+            list[str]: List of sentences in report body. 
+        """        
         raw = self.get_report_raw()
         return nltk.sent_tokenize(raw, language="norwegian")
     
     def get_summary_sentences(self):
-        """Return the sentences of the summary, as a list of strings."""
+        """Return the sentences of the summary, as a list of strings.
+
+        Returns:
+            list[str]: List of sentences in summary. 
+        """        
         return nltk.sent_tokenize(self.summary, language='norwegian')
 
     def get_tokenized_sections(self):
-        """Return the tokenized sections of the report, as a list of {list of strings}."""
+        """Return the tokenized sections of the report, as a list of {list of strings}.
+
+        Returns:
+            list[list[str]]: Tokenized sections of the report body. 
+        """        
         sections = self.get_sections()
         report = [[word.lower() for word in nltk.word_tokenize(section, language='norwegian')] 
                   for section in sections]
         return report
 
     def get_report_tokenized_sentences(self):
-        """Return the tokenized sentences of the report, as a list of {list of strings}."""
+        """Return the tokenized sentences of the report, as a list of {list of strings}.
+
+        Returns:
+            list[list[str]]: Tokenized sentences of report body. 
+        """        
         sentences = self.get_report_sentences()
         report = [[word.lower() for word in nltk.word_tokenize(sentence, language='norwegian')] 
                   for sentence in sentences]
         return report
 
     def get_summary_tokenized_sentences(self):
-        """Return the tokenized sentences of the summary, as a list of {list of strings}."""
+        """Return the tokenized sentences of the summary, as a list of {list of strings}.
+
+        Returns:
+            list[list[str]]: Tokenized sentences of summary. 
+        """        
         sentences = self.get_summary_sentences()
         summary = [[word.lower() for word in nltk.word_tokenize(sentence, language='norwegian')] 
                   for sentence in sentences]
