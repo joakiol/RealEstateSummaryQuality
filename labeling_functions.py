@@ -11,12 +11,15 @@ MATCHED_POLICIES = pd.read_csv("data/VenduData/matched_policies.zip")
 CLAIMS = pd.read_csv('data/VenduData/claims.csv')
 
 def prepare_data_for_labeling_functions(data):
-    """
-    Make a dataframe that has all the relevant info for labeling functions,
+    """Make a dataframe that has all the relevant info for labeling functions,
     such that they can be called much more efficiently on a prepared dataset. 
 
-    :return: Pandas df with all necessary info for labeling functions
-    """
+    Args:
+        data (iterable(SummaryReport)): Input data to label. 
+
+    Returns:
+        pd.DataFrame: Dataframe with all necessary info for labelling functions. 
+    """    
     print("Extracting relevant info for labeling functions from dataset...")
     # Initialize lists for relevant info
     keys = []
@@ -48,7 +51,7 @@ def prepare_data_for_labeling_functions(data):
 
 
     for report in data:
-
+        
         # Get necessary report info:
         report_words = report.get_report_words()
         summary_words = report.get_summary_words()
