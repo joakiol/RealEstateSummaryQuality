@@ -1,6 +1,6 @@
 # SummaryQuality
 
-This project is part of a master thesis on NTNU, where the goal is to measure the quality of summaries of real-estate condition reports. In this project, weak supervision is first used to obtain noisy labels. Then, various models are trained on these noisy labels, with the objective of making models that can measure the quality of summaries for real-estate condition reports. 
+This project is part of a master thesis on NTNU, where the goal is to measure the quality of summaries of real-estate condition reports. In this project, weak supervision is first used to obtain noisy labels. Then, various models are trained on these noisy labels, such that they learn to measure the quality of summaries for real-estate condition reports. 
 
 It must be noted that the models are entirely based on weak supervision. This means that the models have **not** been evaluated on data where the true summary quality is known. It is therefore uncertain how accurate the models truly are. Any results should be regarded as an **indication** only, and not as a ground truth. 
 
@@ -8,7 +8,7 @@ The following explains the functionality of this project. A more detailed docume
 
 # Usage
 
-This project has not been made as a package. Thus, to work with the functions of this project, the necessary files should be copied into the working directory. This includes the following files: 
+To work with this project, the necessary files should be copied into the working directory. This includes the following: 
 - **common.py**: Contains classes for containing real-estate condition reports. 
 - **data.py**: Classes for making, storing and iterating through datasets. 
 - **weak_supervision.py**: Contains a generative weak-supervision model, based on the Snorkel-framework, for making labels. 
