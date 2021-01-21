@@ -102,7 +102,7 @@ Training and testing are done the following way:
 from models import LSAEmbedder, Doc2vecEmbedder, VocabularyEmbedder, Word2vecEmbedder 
 from models import FFNModel, LSTMModel, CNNModel, SummaryQualityModel
 
-embedder = LSA()
+embedder = LSAEmbedder()
 h = FFNModel()
 model = SummaryQualityModel(embedder=embedder, model=h)
 
