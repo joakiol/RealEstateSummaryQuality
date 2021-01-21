@@ -334,7 +334,7 @@ This documentation includes a short description of all classes and functions tha
   
 -   #### `class WSLabelModel()`  
 
-    Class for weak supervision generative model, used for making labels.  
+    Class for weak supervision label model, used for making labels.
     
     **Methods**  
   
