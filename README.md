@@ -53,24 +53,24 @@ for idx, report in enumerate(data):
 Now that a dataset of appropriate structure has been created, we can train a weak supervision label model to make weak supervision labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
 
 ```python
-from weak_supervision import LabelModel
+from weak_supervision import WSLabelModel
 
 # Initialize and train model
-label_model = LabelModel()
+label_model = WSLabelModel()
 label_model.train(data=data)
 
 # Save trained model
 label_model.save(modelname='default')
 
 # Load previously saved model
-label_model = LabelModel().load(modelname='default')
+label_model = WSLabelModel().load(modelname='default')
 
 # Predict labels on the data that the model was trained on
 labels = model.predict_training_set()
 
 # Analyse labeling function coverage, overlap and conflict, print labeling function weights and plot labels
 labelmodel.analyse_training_set()
-print(labelmodel.model.get_weights())
+labelmodel.print_estimated_accuracies()
 labelmodel.plot_training_labels()
 ```
 
