@@ -99,7 +99,8 @@ We have now prepared our data, and we are ready for training models. The trainin
 Training and testing are done the following way: 
 
 ```python
-from models import LSAEmbedder, Doc2vecEmbedder, VocabularyEmbedder, Word2vecEmbedder, FFNModel, LSTMModel, CNNModel, SummaryQualityModel
+from models import LSAEmbedder, Doc2vecEmbedder, VocabularyEmbedder, Word2vecEmbedder 
+from models import FFNModel, LSTMModel, CNNModel, SummaryQualityModel
 
 embedder = LSA()
 h = FFNModel()
