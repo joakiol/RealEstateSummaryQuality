@@ -419,15 +419,15 @@ This documentation includes a short description of all classes and functions tha
     Plot two distributions, one for good summaries, and one for bad.
   
     **Arguments** 
-    - **`quality`**  `(list[float])`: Quality measures to plot. 
-    - **`labels`**  `(bool, optional)`: Labels to use for determining which are good and bad summaries. Defaults to False, in which case only one distribution are shown.
+    - **`quality`**  `(pd.Series)`: Quality measures to plot. Ids are expected in index. 
+    - **`labels`**  `(pd.DataFrame, optional)`: Labels to use for determining which are good and bad summaries. Defaults to False, in which case only one distribution is shown.
     - **`name`**  `(str, optional)`: Save name. Defaults to False (no saving).
     - **`title`**  `(str, optional)`: Title. Defaults to False (No title).
     - **`lab`**  `(bool, optional)`: Whether labels should be shown in plot. Defaults to False.
     - **`show`**  `(bool, optional)`: Whether to show plot. Defaults to True.
-    - **`all`**  `(bool, optional)`: Whether distribution of all should be shown in grey. Defaults to False.
+    - **`all`**  `(bool, optional)`: Whether distribution of all qualitites should be shown in grey background. Defaults to False.
     - **`density`**  `(bool, optional)`: Whether normalization of distributions should be performed. Defaults to True.
-    - **`xlim`**  `(bool, optional)`: Whether plots should be shown on [-1, 1]. Defaults to True.
+    - **`xlim`**  `(bool, optional)`: Whether x-axis should be set to [-1, 1]. Defaults to True.
     
 
 -   #### `function noise_aware_cosine_loss(quality, labels, tau_good, tau_bad)`  
