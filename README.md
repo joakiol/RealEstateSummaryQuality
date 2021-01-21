@@ -163,7 +163,7 @@ print(f"acc: {acc:.3f}, prec: {prec:.3f}, rec: {rec:.3f}, f1: {f1:.3f}")
 ut.plot_quality(quality_test, labels=labels_test, title='LSA+LinTrans', show=True)
 ```
 
-In our work, we use the following models in our results. 
+In our work, we use the following models in the results. 
 
 ```python
 
