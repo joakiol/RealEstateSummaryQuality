@@ -245,7 +245,7 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
     Contains a condition report. Implemented by Vendu.  
     
     **Arguments**
-    - **`id`** `(string)`: ID of real-estate condition report.  
+    - **`id`** (`string`): ID of real-estate condition report.  
     - **`type`**: Not sure.  
     - **`date`**: Date of real-estate assessment.  
     - **`author`**: Author of real-estate condition report.  
