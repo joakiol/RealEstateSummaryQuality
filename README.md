@@ -246,65 +246,68 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
     
     **Arguments**
     - **`id`**  `(str)`: ID of real-estate condition report.  
-    - **`type`**  `(?)`: Not sure.  
+    - **`type`**  `(int)`: Not sure.  
     - **`date`**  `(str)`: Date of real-estate assessment.  
     - **`author`**  `(int)`: Author of real-estate condition report.  
     - **`building`**  `(Building)`: Contains metadata about the building. `type Building`.  
     - **`cadastre`**  `(Cadastre)`: Contains metadata about the cadastre. `type Cadastre`.  
     - **`place`**  `(list[PlaceDescription])`: Contains placement info of the real-estate. `type list(PlaceDescription)`.  
-    - **`condition`**  `list[ConditionDescription])`: Contains condition info of the real-estate. `type list(ConditionDescription)`.  
+    - **`condition`**  `(list[ConditionDescription])`: Contains condition info of the real-estate. `type list(ConditionDescription)`.  
   
   
 -   #### `class SummaryReport(cr)`  
 
     Extends the `ConditionReport` class, with some useful methods for this project.  
     
-    **Parameters**  
-    - **`cr`**: A real-estate condition report. `type ConditionReport`.  
+    **Arguments**  
+    - **`cr`**  `(ConditionReport)`: A real-estate condition report.
     
     **Methods**  
     -   ##### `SummaryReport.get_report_raw()`  
-        **Return:** The complete report text. `type string`.  
+        **Return**  `(str)`: The complete report text.
     -   ##### `SummaryReport.get_summary_raw()`  
-        **Return:** The complete summary text. `type string`.  
+        **Return**  `(str)`: The complete summary text. 
     -   ##### `SummaryReport.get_sections()`  
-        **Return:** The sections of the report. `type list(string)`.  
+        **Return**  `(list[str])`: The sections of the report. 
     -   ##### `SummaryReport.get_report_words()`  
-        **Return:** The words of the report. `type list(string)`.  
+        **Return**  `(list[str])`: The words of the report. 
     -   ##### `SummaryReport.get_summary_words()`  
-        **Return:** The words of the summary. `type list(string)`.  
+        **Return**  `(list[str])`: The words of the summary. 
     -   ##### `SummaryReport.get_report_sentences()`  
-        **Return:** The sentences of the report. `type list(string)`.  
+        **Return**  `(list[str])`: The sentences of the report. 
     -   ##### `SummaryReport.get_summary_sentences()`  
-        **Return:** The sentences of the summary. `type list(string)`.  
+        **Return**  `(list[str])`: The sentences of the summary.
     -   ##### `SummaryReport.get_tokenized_sections()`  
-        **Return:** The tokenized sections of the report. `type list(list(string))`.  
+        **Return**  `(list[list[str]])`: The tokenized sections of the report. 
     -   ##### `SummaryReport.get_report_tokenized_sentences()`  
-        **Return:** The tokenized sentences of the report. `type list(list(string))`.  
+        **Return**  `(list[list[str]])`: The tokenized sentences of the report. 
     -   ##### `SummaryReport.get_summary_tokenized_sentences()`  
-        **Return:** The tokenized sentences of the summary. `type list(list(string))`.  
+        **Return**  `(list[list[str]])`: The tokenized sentences of the summary. 
     
     
 ## data.py
   
--   #### `class VenduData(path='data/VenduData/dataset', progress_bar=True, print_list=None, shuffle=1)`
+-   #### `class ReportData(path, print_progress=True, shuffle_buffer_size=1, apply=None, batch_size=1, collate=None)`
   
-    General purpuse iterable for data in WebDataset-format. This will be used throughout this project. 
+    Iterable class object for storing and iterating over data. Used extensively in this project for storing data in different formats that makes training faster and more practical. Takes a path as input, and can either iterate over existing data at this path, or create new data to path. Various arguments for different use cases. Stores data in WebDataset format (tar archives), for memory-friendly reading. 
   
-    **Parameters**  
-    - **`path`**: Path to area where data is stored. `type string`.  
-    - **`progress_bar`**: Indicator of whether progress of loops through data should be shown. `type boolean`.  
-    - **`print_list`**: For each iteration through data, the next string will be printed. `type list(string) or None`.  
-    - **`shuffle`**: Shuffle the dataset with a buffer of size `shuffle`. `shuffle=1` will result in no shuffle. `type int`  
+    **Arguments**  
+    - **`path`**  `(str)`: Path to store/read data to/from. 
+    - **`print_progress`**  `(bool, optional)`: Whether to print progress in iterations. Defaults to True.
+    - **`shuffle_buffer_size`**  `(int, optional)`: WebDataset shuffles data by putting elements into a buffer with given size. Defaults to 1 (no shuffle).
+    - **`apply`**  `(func, optional)`: Apply function to elements in data. Defaults to None (no func).
+    - **`batch_size`**  `(int, optional)`: Data can be loaded in batches. Defaults to 1 (no batching).
+    - **`collate`**  `([func, optional)`: Apply func to batches. Defaults to None.
     
     **Methods**
-    -   **`VenduData.make_dataset(iterable, func)`**  
+    -   **`create(self, data, apply=None, overwrite=False)`**  
     
-        Make and save dataset to appropriate format from iterable. 
+        Store dataset to path from input data. Can apply function to data before storing. 
         
-        **Parameters**  
-        - **`iterable`**: Iterable of elements to add to dataset. 
-        - **`func`**: Function to apply on elements in iterable. Should return (id, element). If `element==None`, it will be omitted. 
+        **Arguments**  
+        - **`data`** `(iterator)`: Any iterator type. 
+        - **`apply`** `(func, optional)`: Apply any function to data elements before storing. Defaults to transforming ConditionReport object to SummaryReport object. 
+        - **`overwrite`** `(bool, optional)`: Will only overwrite existing data at path if overwrite=True. Defaults to False.
     
 
 -   #### `class SubsetVenduData(data, subset)`  
