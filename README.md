@@ -106,7 +106,7 @@ embedder = LSAEmbedder()
 h = FFNModel()
 model = SummaryQualityModel(embedder=embedder, model=h)
 
-# train method performs all four steps. 
+# train method performs steps 2-4 by default, and step 1 only if it has not been done before. 
 model.train(train_name='train', train_data=train, val_name='validation', val_data=val)
 
 # Predict qualities for validation and test set
