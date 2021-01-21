@@ -90,8 +90,8 @@ test = SubsetReportData(data=data, subset=labels_test.index)
 
 ### Defining and training models
 
-We have now prepared our data, and we are ready for training models. The training is performed in the following steps: 
-1. The data is first pre-processed and stored in an appropriate way for the given model. Note that a name must be given to each dataset. The pre-processed data will be stored to a path based on the given name. Note that this step must only be done once for each type of pre-processing. 
+We have now prepared our data, and we are ready for training models. The training is performed in four steps: 
+1. The data is first pre-processed and stored in an appropriate way for the given model. Note that a name must be given to each dataset. The pre-processed data will be stored to a path based on the given name. This step must be done only once for each type of pre-processing. 
 2. After pre-processing, the embedder can be trained. 
 3. Once the embedder is trained, the textual data can be embedded, to prepare it for the neural network. Embeddings are obtained and again stored to a path based on the given dataset name, as well as the embedder used to embed the data. This must be done once for each version of an embedder. 
 4. When the embeddings are ready, the neural network model can finally be trained. This is the fourth and final step in the training process. 
