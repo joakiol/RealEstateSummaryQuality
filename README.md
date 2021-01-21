@@ -66,9 +66,9 @@ label_model.save(modelname='default')
 label_model = WSLabelModel().load(modelname='default')
 
 # Predict labels on the data that the model was trained on
-labels = model.predict_training_set()
+labels = label_model.predict_training_set()
 
-# Analyse labeling function coverage, overlap and conflict, print labeling function weights and plot labels
+# Analyse labeling function coverage, overlap and conflict, print estimated labeling function accuracies and plot labels
 labelmodel.analyse_training_set()
 labelmodel.print_estimated_accuracies()
 labelmodel.plot_training_labels()
