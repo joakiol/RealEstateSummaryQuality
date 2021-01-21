@@ -445,10 +445,11 @@ This documentation includes a short description of all classes and functions tha
 
 -   #### `function get_best_threshold(quality, labels)`  
   
-    Calculates a noise aware cosine similarity loss for a set of qualities/labels.
+    Get maximum-accuracy threshold to use for classification.
   
     **Arguments**  
-   
+    - **`quality`**  `(pd.Series)`: Predicted qualities, with ids on index. 
+    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index. 
     
     **Return**  `(float)`: Threshold that maximizes accuracy. 
 
