@@ -323,7 +323,7 @@ This documentation includes a short description of all classes and functions tha
 
 -   #### `class LabelledVenduData(data, labels)`  
 
-    Class for adding labels to a subset of elements in data. Becomes `iterable[tuple(element, tuple(float, float))]`, where the first float represents the probability of the summary being bad, and the second float is the probability of summary being good. 
+    Class for adding labels to a subset of elements in data. Becomes `iterable[tuple(SummaryReport, tuple(float, float))]`, where the first float represents the probability of the summary being bad, and the second float is the probability of summary being good. 
 
     **Arguments** 
     - **`data`**  `(iterable[SummaryReport])`: Input data with elements. 
