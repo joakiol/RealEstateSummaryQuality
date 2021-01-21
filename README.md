@@ -91,25 +91,38 @@ test = SubsetVenduData(data=data, subset=labels_test.index)
 ### Defining and training models
 
 We have now prepared our data, and we are ready for training models. The training is performed in the following steps: 
-1. The data is first pre-processed and stored in an appropriate way for the model. Note that a name must be given to each dataset. The pre-processed data will be stored to a path based on the given name. 
+1. The data is first pre-processed and stored in an appropriate way for the given model. Note that a name must be given to each dataset. The pre-processed data will be stored to a path based on the given name. Note that this step must only be done once for each type of pre-processing. 
 2. After pre-processing, the embedder can be trained. 
-3. Once the embedder is trained, the textual data can be embedded, to prepare it for the neural network. Embeddings are obtained and again stored to a path based on the given dataset name, as well as the embedder used to embed the data. 
+3. Once the embedder is trained, the textual data can be embedded, to prepare it for the neural network. Embeddings are obtained and again stored to a path based on the given dataset name, as well as the embedder used to embed the data. This must be done once for each version of an embedder. 
 4. When the embeddings are ready, the neural network model can finally be trained. This is the fourth and final step in the training process. 
 
-
+Training and testing are done the following way: 
 
 ```python
 
 embedder = LSA()
-h = FFNModel
+h = FFNModel()
 model = SummaryQualityModel(embedder=embedder, model=h)
 
-model.train(
+# train method performs all four steps. 
+model.train(train_name='train', train_data=train, val_name='validation', val_data=val)
+q = model.predict(data_name='test', data=test)
+q.to_csv('predictions/LSA+LinTrans.csv)
 
+# Alternative training/testing: 
+# prepare_data method performs steps 1-3. This is convenient of one wants to separate 
+# the processes in CPU and GPU jobs, since step 4 is the only step that uses GPU. 
+# It is also possible to tune hyperparameters in neural network without performing steps 1-3. 
+model.prepare_data(dataname='train', data=train, train_embedder=True)
+model.prepare_data(dataname='validation', data=val)
+model.prepare_date(dataname='test', data=test)
+
+# With these settings, steps 1-3 are ignored if they have been performed before
+model.train(train_name='train', train_data=train, val_name='validation', val_data=val, 
+            train_embedder=False, overwrite_emb=False)
+q = model.predict(data_name='test', data=test, overwrite_emb=False)
+q.to_csv('predictions/LSA+LinTrans.csv)
 ```
-
-
-
 
 In our work, we use the following models in our results. 
 
