@@ -79,13 +79,13 @@ labelmodel.plot_training_labels()
 The models in this work expect the input to train-methods to be `iterable[tuple(SummaryReport, tuple(float, float))]`, where the first float represents the probability of the summary being bad, while the second float represents the probability of the summary being good, according to the label model above. To avoid having to make new datasets (thus storing the data twice), the iterable classes `SubsetReportData` and `LabelledReportData` have been made, where`SubsetReportData` only iterates through a subset of the elements in the data, while `LabelledVenduData` also iterates through a subset and returns the labels together with the elements. With these classes, a train, val and test set can easily be made by the following code: 
 
 ```python
-from data import SubsetVenduData, LabelledVenduData
+from data import SubsetReportData, LabelledReportData
 import utils as ut
 
 labels_train, labels_val, labels_test = ut.train_val_test_split(labels, ratio=[0.8, 0.1, 0.1], seed=1)
-train = LabelledVenduData(data=data, labels=labels_train)
-val = LabelledVenduData(data=data, labels=labels_val)
-test = SubsetVenduData(data=data, subset=labels_test.index)
+train = LabelledReportData(data=data, labels=labels_train)
+val = LabelledReportData(data=data, labels=labels_val)
+test = SubsetReportData(data=data, subset=labels_test.index)
 ```
 
 ### Defining and training models
