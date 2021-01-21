@@ -99,6 +99,7 @@ We have now prepared our data, and we are ready for training models. The trainin
 Training and testing are done the following way: 
 
 ```python
+from models import LSAEmbedder, Doc2vecEmbedder, VocabularyEmbedder, Word2vecEmbedder, FFNModel, LSTMModel, CNNModel, SummaryQualityModel
 
 embedder = LSA()
 h = FFNModel()
@@ -106,28 +107,63 @@ model = SummaryQualityModel(embedder=embedder, model=h)
 
 # train method performs all four steps. 
 model.train(train_name='train', train_data=train, val_name='validation', val_data=val)
-q = model.predict(data_name='test', data=test)
-q.to_csv('predictions/LSA+LinTrans.csv)
 
-# Alternative training/testing: 
-# prepare_data method performs steps 1-3. This is convenient of one wants to separate 
-# the processes in CPU and GPU jobs, since step 4 is the only step that uses GPU. 
-# It is also possible to tune hyperparameters in neural network without performing steps 1-3. 
-model.prepare_data(dataname='train', data=train, train_embedder=True)
-model.prepare_data(dataname='validation', data=val)
-model.prepare_date(dataname='test', data=test)
+# Predict qualities for validation and test set
+q_val = model.predict(data_name='validation', data=val)
+q_test = model.predict(data_name='test', data=test)
 
-# With these settings, steps 1-3 are ignored if they have been performed before
+q_val.to_csv('predictions/LSA+LinTrans_val.csv)
+q_test.to_csv('predictions/LSA+LinTrans_test.csv)
+
+```
+Note that the train-method by default always performs steps 2-4, while step 1 is only performed if it has not been performed before. The steps can be controlled the following way: 
+
+```python
+# Only step 1: 
+model.prepare_data(dataname='train', data=train, overwrite=True, train_embedder=False, overwrite_emb=False)
+
+# Only step 2-3, assuming that step 1 has been performed before:
+model.prepare_data(dataname='train', data=train, overwrite=False, train_embedder=True, overwrite_emb=True)
+
+# Only step 4, assuming step 1-3 has been performed before:
+model.train(train_name='train', train_data=train, val_name='validation', val_data=val, 
+            overwrite=False, train_embedder=False, overwrite_emb=False)
+
+# CPU part of training/testing
+model.prepare_data(dataname='train', data=train, train_embedder=True, overwrite_emb=True)
+model.prepare_data(dataname='validation', data=val, overwrite_emb=True)
+model.prepare_data(dataname='test', data=test, overwrite_emb=True)
+
+# GPU part of training. This way, the neural network can also be fine-tuned without performing 1-3 over again. 
 model.train(train_name='train', train_data=train, val_name='validation', val_data=val, 
             train_embedder=False, overwrite_emb=False)
-q = model.predict(data_name='test', data=test, overwrite_emb=False)
-q.to_csv('predictions/LSA+LinTrans.csv)
+            
+# Predict on prepared datasets
+q_val = model.predict(data_name='validation', data=val, overwrite_emb=False)
+q_test = model.predict(data_name='test', data=test, overwrite_emb=False)
+```
+
+We evaluate our models the following way:
+
+```python
+# Get qualitites for val and test set from saved files
+quality_val = pd.read_csv('predictions/LSA+LinTrans_val.csv', index_col=0, squeeze=True)
+quality_test = pd.read_csv('predictions/LSA+LinTrans_test.csv', index_col=0, squeeze=True)
+
+# Calculate training loss and accuracy scores
+loss = ut.noise_aware_cosine_loss(quality_test, labels_test, 0.2, -0.2)
+best_threshold = ut.get_best_threshold(quality_val, labels_val)
+acc, prec, rec, f1 = ut.classification_scores(quality_test, labels_test, best_threshold)
+
+# Print loss and classification scores and plot distribution of summary qualitity
+print(f"Loss: {loss:.3f}")
+print(f"acc: {acc:.3f}, prec: {prec:.3f}, rec: {rec:.3f}, f1: {f1:.3f}")
+ut.plot_quality(quality_test, labels=labels_test, title='LSA+LinTrans', show=True)
 ```
 
 In our work, we use the following models in our results. 
 
 ```python
-from models import LSAEmbedder, Doc2vecEmbedder, VocabularyEmbedder, Word2vecEmbedder, FFNModel, LSTMModel, CNNModel, SummaryQualityModel
 
 # LSA baseline
 LSA = LSAEmbedder()
