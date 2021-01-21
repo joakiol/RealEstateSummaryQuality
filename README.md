@@ -9,54 +9,38 @@ The following explains the functionality of this project. A more detailed docume
 # Usage
 
 To work with this project, the necessary files should be copied into the working directory. This includes the following: 
-- **common.py**: Contains classes for containing real-estate condition reports. 
+- **common.py**: Classes for containing real-estate condition reports. 
 - **data.py**: Classes for making, storing and iterating through datasets. 
-- **weak_supervision.py**: Contains a generative weak-supervision model, based on the Snorkel-framework, for making labels. 
-- **labeling_functions.py**: Contains the labeling functions (with helper functions) that the generative model in weak_supervision.py is based on. 
-- **models.py**: Contains the models that has been implemented in this work. 
+- **weak_supervision.py**: Implements a weak supervision label model based on the Snorkel-framework, used for making labels. 
+- **labeling_functions.py**: Contains the labeling functions (with helper functions) that the label model in weak_supervision.py is based on. 
+- **models.py**: Implements the various models used in this work. 
+- **networks.py**: Implements neural network architectures used by the models in `models.py`. 
 - **utils.py**: Contains useful functions for analysing performance, and various other stuff. 
 
 The necessary packages for these files are found in requirements.txt. 
 
-### Representing real-estate condition reports
-
-Vendu has implemented the class `ConditionReport`, which represents a real-estate condition report. In this project, the class `SummaryReport` has also been implemented. This class inherits from the `ConditionReport` class, and has implemented some additional useful methods for this project. The following function shows how a `SummaryReport`-object can be made from a `ConditionReport`-object. Note that the function returns `None` if either the report or summary is empty, which will be useful for later. 
-
-```python
-from common import ConditionReport, SummaryReport
-
-def make_report(condition_report):
-    """
-    Make SummaryReport-object from ConditionReport-object. 
-    Emtpy reports/summaries will return None. 
-    Returns tuple(id, report)
-    """
-    report = SummaryReport(condition_report)
-    if len(report.condition) > 0 and len(report.summary) > 0:
-        return report.id, report
-    else:
-        return None, None
-```
-
 ### Data structure
 
-The models of this work expect data input as an iterable of SummaryReport objects (with corresponding labels, when appropriate). In this project, the iterable class `VenduData` has been implemented for creating and representing datasets. Any iterable of SummaryReport-objects can be used, but in this project we use VenduData-objects for representing datasets, since this is practical. A dataset with the appropriate structure can be made from an iterable of ConditionReport-objects the following way:
+Vendu has implemented the class `ConditionReport`, which represents a real-estate condition report. In this project, the class `SummaryReport` has also been implemented, which inherits from the `ConditionReport` class, and has implemented some additional methods that are useful for this project. 
+
+The models of this work expect data input as an iterable of SummaryReport objects (with corresponding labels, when appropriate). In this project, the iterable class `ReportData` has been implemented for creating and representing datasets. This makes use of the WebDataset package, which stores data in .tar archives that can be streamed from disk, such that iterating becomes memory-friendly.  This class is used by our models for storing data at different stages (pre-processed, embedded, etc.), and is also convenient to use for our dataset. A dataset of SummaryReports can be made from an iterable of ConditionReport-objects the following way:
 
 ```python
 import pickle
 import bz2
-from data import VenduData
+from data import ReportData
 
 print("Loading pickled file...")
-list_of_ConditionReport = pickle.load(bz2.BZ2File('data/VenduData/adjusted_enebolig_reports.pkl', 'rb'), encoding='latin1')
+list_of_ConditionReport = pickle.load(bz2.BZ2File('data/VenduData/adjusted_enebolig_reports.pkl', 
+                                                  'rb'), encoding='latin1')
 print("Done!")
 
-data = VenduData(path='data/VenduData/dataset')
-data.make_dataset(iterable=list_of_ConditionReport, func=make_report)
+data = ReportData(path='data/dataset')
+data.create(data=list_of_ConditionReport)
 ```
-The above code will save the data to file at './data/VenduData/dataset', and will only have to run once. Afterwards, the dataset can be initialized by:
+The above code will save the data to file at './data/dataset', and will only have to run once. Afterwards, the dataset can be initialized by:
 ```python
-data = VenduData(path='data/VenduData/dataset')
+data = ReportData(path='data/dataset')
 
 for idx, report in enumerate(data):
     print(report.id)
@@ -66,28 +50,33 @@ for idx, report in enumerate(data):
 
 ### Making weak supervision labels
 
-Now that a dataset of appropriate structure has been created, we can train a generative model to make weak supervision labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
+Now that a dataset of appropriate structure has been created, we can train a weak supervision label model to make weak supervision labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
 
 ```python
-from weak_supervision import GenerativeModel
+from weak_supervision import LabelModel
 
 # Initialize and train model
-model = GenerativeModel()
-model.train(data=data)
+label_model = LabelModel()
+label_model.train(data=data)
 
 # Save trained model
-model.save(modelname='default')
+label_model.save(modelname='default')
 
 # Load previously saved model
-model = GenerativeModel().load(modelname='default')
+label_model = LabelModel().load(modelname='default')
 
 # Predict labels on the data that the model was trained on
 labels = model.predict_training_set()
+
+# Analyse labeling function coverage, overlap and conflict, print labeling function weights and plot labels
+labelmodel.analyse_training_set()
+print(labelmodel.model.get_weights())
+labelmodel.plot_training_labels()
 ```
 
 ### Making a training, validation and test set
 
-The models in this work expect the input to train-methods to be iterables of `tuple(SummaryReport, tuple(float, float))`, where the first float represents the probability of the summary being bad, while the second float represents the probability of the summary being good, according to the generative model above. To avoid having to make new datasets (thus storing the data twice), the iterable classes `SubsetVenduData` and `LabelledVenduData` has been made. These inherit from the `VenduData`-class, but `SubsetVenduData` only iterates through a subset of the elements in the data, while `LabelledVenduData` also iterates through a subset and returns the labels together with the elements. With these classes, a train, val and test set can easily be made by the following code: 
+The models in this work expect the input to train-methods to be `iterable[tuple(SummaryReport, tuple(float, float))]`, where the first float represents the probability of the summary being bad, while the second float represents the probability of the summary being good, according to the label model above. To avoid having to make new datasets (thus storing the data twice), the iterable classes `SubsetReportData` and `LabelledReportData` has been made. These inherit from the `VenduData`-class, but `SubsetReportData` only iterates through a subset of the elements in the data, while `LabelledVenduData` also iterates through a subset and returns the labels together with the elements. With these classes, a train, val and test set can easily be made by the following code: 
 
 ```python
 from data import SubsetVenduData, LabelledVenduData
@@ -99,6 +88,82 @@ val = LabelledVenduData(data=data, labels=labels_val)
 test = SubsetVenduData(data=data, subset=labels_test.index)
 ```
 
+### Defining and training models
+
+We have now prepared our data, and we are ready for training models. The training is performed in the following steps: 
+1. The data is first pre-processed and stored in an appropriate way for the model. Note that a name must be given to each dataset. The pre-processed data will be stored to a path based on the given name. 
+2. After pre-processing, the embedder can be trained. 
+3. Once the embedder is trained, the textual data can be embedded, to prepare it for the neural network. Embeddings are obtained and again stored to a path based on the given dataset name, as well as the embedder used to embed the data. 
+4. When the embeddings are ready, the neural network model can finally be trained. This is the fourth and final step in the training process. 
+
+
+
+```python
+
+embedder = LSA()
+h = FFNModel
+model = SummaryQualityModel(embedder=embedder, model=h)
+
+model.train(
+
+```
+
+
+
+
+In our work, we use the following models in our results. 
+
+```python
+from models import LSAEmbedder, Doc2vecEmbedder, VocabularyEmbedder, Word2vecEmbedder, FFNModel, LSTMModel, CNNModel, SummaryQualityModel
+
+# LSA baseline
+LSA = LSAEmbedder()
+LSA_baseline = SummaryQualityModel(embedder=LSA)
+
+# Doc2vec baseline
+Doc2vec = Doc2vecEmbedder()
+Doc2vec_baseline = SummaryQualityModel(embedder=Doc2vec)
+
+# LSA+LinTrans
+LSA = LSAEmbedder()
+LinTrans = FFNModel(layers=[100])
+LSA_LinTrans = SummaryQualityModel(embedder=LSA, model=LinTrans)
+
+# Doc2vec+LinTrans
+Doc2vec = Doc2vecEmbedder(dim=500)
+LinTrans = FFNModel(layers=[100])
+Doc2vec_LinTrans = SummaryQualityModel(embedder=Doc2vec, model=LinTrans)
+
+# LSA+FFN
+LSA = LSAEmbedder()
+FFN = FFNModel(layers=[1000, 1000, 100])
+LSA_FFN = SummaryQualityModel(embedder=LSA, model=FFN)
+
+# Doc2vec+LinTrans
+Doc2vec = Doc2vecEmbedder(dim=500)
+FFN = FFNModel(layers=[1000, 1000, 1000, 100])
+Doc2vec_FFN = SummaryQualityModel(embedder=Doc2vec, model=FFN)
+
+# LSA+LSTM
+LSA = LSAEmbedder()
+LSTM = LSTMModel()
+LSA_LSTM = SummaryQualityModel(embedder=LSA, model=LSTM)
+
+# Doc2vec+LSTM
+Doc2vec = Doc2vecEmbedder(dim=500)
+LSTM = LSTMModel()
+Doc2vec_LSTM = SummaryQualityModel(embedder=Doc2vec, model=LSTM)
+
+# EmbLayer+CNN
+vocabulary = VocabularyEmbedder()
+CNN = CNNModel(embedding_size=500, output_size=500, kernels=[5], learning_rate=1e-3)
+EmbLayer_CNN = SummaryQualityModel(embedder=vocabulary, model=CNN)
+
+# Word2vec+CNN
+Word2vec = Word2vecEmbedder()
+CNN = CNNModel()
+Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
+```
 
 # Documentation
 
