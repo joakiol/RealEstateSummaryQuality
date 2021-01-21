@@ -68,10 +68,11 @@ label_model = WSLabelModel().load(modelname='default')
 # Predict labels on the data that the model was trained on
 labels = label_model.predict_training_set()
 
-# Analyse labeling function coverage, overlap and conflict, print estimated labeling function accuracies and plot labels
-labelmodel.analyse_training_set()
-labelmodel.print_estimated_accuracies()
-labelmodel.plot_training_labels()
+print("\nLabeling function analysis:")
+label_model.analyse_training_set()
+print("\nEstimated labeling function accuracies:")
+label_model.print_estimated_accuracies()
+label_model.plot_training_labels()
 ```
 
 ### Making a training, validation and test set
@@ -113,8 +114,8 @@ model.train(train_name='train', train_data=train, val_name='validation', val_dat
 q_val = model.predict(data_name='validation', data=val)
 q_test = model.predict(data_name='test', data=test)
 
-q_val.to_csv('predictions/LSA+LinTrans_val.csv)
-q_test.to_csv('predictions/LSA+LinTrans_test.csv)
+q_val.to_csv('predictions/LSA+LinTrans_val.csv')
+q_test.to_csv('predictions/LSA+LinTrans_test.csv')
 
 ```
 Note that the train-method by default always performs steps 2-4, while step 1 is only performed if it has not been performed before. The steps can be controlled the following way: 
