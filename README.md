@@ -251,10 +251,10 @@ This documentation includes a short description of all classes and functions tha
     - **`type`**  `(int)`: Not sure.  
     - **`date`**  `(str)`: Date of real-estate assessment.  
     - **`author`**  `(int)`: Author of real-estate condition report.  
-    - **`building`**  `(Building)`: Contains metadata about the building. `type Building`.  
-    - **`cadastre`**  `(Cadastre)`: Contains metadata about the cadastre. `type Cadastre`.  
-    - **`place`**  `(list[PlaceDescription])`: Contains placement info of the real-estate. `type list(PlaceDescription)`.  
-    - **`condition`**  `(list[ConditionDescription])`: Contains condition info of the real-estate. `type list(ConditionDescription)`.  
+    - **`building`**  `(Building)`: Contains metadata about the building. 
+    - **`cadastre`**  `(Cadastre)`: Contains metadata about the cadastre. 
+    - **`place`**  `(list[PlaceDescription])`: Contains placement info of the real-estate.
+    - **`condition`**  `(list[ConditionDescription])`: Contains condition info of the real-estate. 
   
   
 -   #### `class SummaryReport(cr)`  
