@@ -245,14 +245,14 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
     Contains a condition report. Implemented by Vendu.  
     
     **Arguments**
-    - **`id`** (`string`): ID of real-estate condition report.  
-    - **`type`**: Not sure.  
-    - **`date`**: Date of real-estate assessment.  
-    - **`author`**: Author of real-estate condition report.  
-    - **`building`**: Contains metadata about the building. `type Building`.  
-    - **`cadastre`**: Contains metadata about the cadastre. `type Cadastre`.  
-    - **`place`**: Contains placement info of the real-estate. `type list(PlaceDescription)`.  
-    - **`condition`**: Contains condition info of the real-estate. `type list(ConditionDescription)`.  
+    - **`id`**  `(str)`: ID of real-estate condition report.  
+    - **`type`**  `(?)`: Not sure.  
+    - **`date`**  `(str)`: Date of real-estate assessment.  
+    - **`author`**  `(int)`: Author of real-estate condition report.  
+    - **`building`**  `(Building)`: Contains metadata about the building. `type Building`.  
+    - **`cadastre`**  `(Cadastre)`: Contains metadata about the cadastre. `type Cadastre`.  
+    - **`place`**  `(list[PlaceDescription])`: Contains placement info of the real-estate. `type list(PlaceDescription)`.  
+    - **`condition`**  `list[ConditionDescription])`: Contains condition info of the real-estate. `type list(ConditionDescription)`.  
   
   
 -   #### `class SummaryReport(cr)`  
