@@ -393,7 +393,7 @@ This documentation includes a short description of all classes and functions tha
       
         - **Parameter `modelname`**  `(str, optional)`: Filename to load from. Defaults to 'default'.
         
-        - **Return**  `(WSLabelModel)`: Self, so that one can write `model = WSLabelModel.load(modelname)`. 
+        - **Return**  `(WSLabelModel)`: Self, so that one can write `model = WSLabelModel().load(modelname)`. 
    
 
 ## utils.py
@@ -403,12 +403,67 @@ This documentation includes a short description of all classes and functions tha
   
     Split input data into a train, val and test set. 
   
-    **Parameters**  
-    - **`labels`**: Complete set of labels to divide into train/val/test. `type pandas.DataFrame`.  
-    - **`ratio`**: Relative size that train/val/test set should have. `type list(float)`.  
-    - **`seed`**: Random state to use for splitting. `type int`.  
+    **Arguments**  
+    - **`labels`**  `(pd.DataFrame)`: Labels with report ids in index. 
+    - **`ratio`**  `(list, optional)`: Size of train, val and test. Defaults to [0.8, 0.1, 0.1].
+    - **`seed`**  `(int, optional)`: Seed for shuffling. Defaults to 1.
     
     **Return**  
-    - Labels for training set, with ids on the index. `type pandas.DataFrame`.  
-    - Labels for validation set, with ids on the index. `type pandas.DataFrame`.    
-    - Labels for test set, with ids on the index. `type pandas.DataFrame`.    
+    - **`probs_train`**  `(pd.DataFrame)`: Dataframe with labels for training set. 
+    - **`probs_val`**  `(pd.DataFrame)`: Dataframe with labels for validation set. 
+    - **`probs_test`**  `(pd.DataFrame)`: Dataframe with labels for test set. 
+    
+    
+-   #### `function plot_quality(quality, labels=False, name=False, title=False, lab=False, show=True, all=False, density=True, xlim=True)`  
+  
+    Plot two distributions, one for good summaries, and one for bad.
+  
+    **Arguments** 
+    - **`quality`**  `(list[float])`: Quality measures to plot. 
+    - **`labels`**  `(bool, optional)`: Labels to use for determining which are good and bad summaries. Defaults to False, in which case only one distribution are shown.
+    - **`name`**  `(str, optional)`: Save name. Defaults to False (no saving).
+    - **`title`**  `(str, optional)`: Title. Defaults to False (No title).
+    - **`lab`**  `(bool, optional)`: Whether labels should be shown in plot. Defaults to False.
+    - **`show`**  `(bool, optional)`: Whether to show plot. Defaults to True.
+    - **`all`**  `(bool, optional)`: Whether distribution of all should be shown in grey. Defaults to False.
+    - **`density`**  `(bool, optional)`: Whether normalization of distributions should be performed. Defaults to True.
+    - **`xlim`**  `(bool, optional)`: Whether plots should be shown on [-1, 1]. Defaults to True.
+    
+
+-   #### `function noise_aware_cosine_loss(quality, labels, tau_good, tau_bad)`  
+  
+    Calculates a noise aware cosine similarity loss for a set of qualities/labels.
+  
+    **Arguments**  
+    - **`quality`**  `(pd.Series)`: Predicted qualities, with ids on index. 
+    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index. 
+    - **`tau_good`**  `(float)`: Which tau_good to use for loss function. 
+    - **`tau_bad`**  `(float)`: Which tau_bad to use for loss function. 
+    
+    **Return**  `(float)`: Noise aware cosine embedding loss for input qualities and labels. 
+
+
+-   #### `function get_best_threshold(quality, labels)`  
+  
+    Calculates a noise aware cosine similarity loss for a set of qualities/labels.
+  
+    **Arguments**  
+   
+    
+    **Return**  `(float)`: Threshold that maximizes accuracy. 
+
+
+-   #### `function classification_scores(quality, labels, best_threshold)`  
+  
+    Calculates accuracy, recall, precision and F1-score on the labels, by using given threshold for classifying.
+  
+    **Arguments**  
+     - **`quality`**  `(pd.Series)`: Predicted qualities, with ids on index. 
+    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index. 
+    - **`best_threshold`** `(float)`: Threshold to use for classifying good/bad summaries. 
+    
+    **Return**  
+    - **`accuracy`**  `(float)`: Accuracy for given qualities and threshold. 
+    - **`precision`**  `(float)`: Precision for given qualities and threshold. 
+    - **`recall`**  `(float)`: Recall for given qualities and threshold. 
+    - **`f_one`**  `(float)`: F1_score for given qualities and threshold. 
