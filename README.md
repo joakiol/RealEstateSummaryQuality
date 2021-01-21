@@ -218,7 +218,7 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
 
 # Documentation
 
-This documentation includes a short description of all classes and functions that are meant to be used by a user. There are more classes and functions that a user should not have to use herself, which is indicated in the code with an underscore before class/function name. See docstrings in the code for an explanation of functionality for such classes/functions. 
+This documentation includes a short description of all classes and functions that are meant to be used by a user. There are more classes and functions that a user should not have to use herself. See code with docstrings for a complete overview. 
 
 ## common.py
   
