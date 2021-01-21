@@ -31,8 +31,8 @@ import bz2
 from data import ReportData
 
 print("Loading pickled file...")
-list_of_ConditionReport = pickle.load(bz2.BZ2File('data/VenduData/adjusted_enebolig_reports.pkl', 
-                                                  'rb'), encoding='latin1')
+list_of_ConditionReport = pickle.load(bz2.BZ2File('data/VenduData/adjusted_enebolig_reports.pkl', 'rb'), 
+                                      encoding='latin1')
 print("Done!")
 
 data = ReportData(path='data/dataset')
