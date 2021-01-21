@@ -305,35 +305,32 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
         Store dataset to path from input data. Can apply function to data before storing. 
         
         **Arguments**  
-        - **`data`** `(iterator)`: Any iterator type. 
-        - **`apply`** `(func, optional)`: Apply any function to data elements before storing. Defaults to transforming ConditionReport object to SummaryReport object. 
-        - **`overwrite`** `(bool, optional)`: Will only overwrite existing data at path if overwrite=True. Defaults to False.
+        - **`data`**  `(iterator)`: Any iterator type. 
+        - **`apply`**  `(func, optional)`: Apply any function to data elements before storing. Defaults to transforming ConditionReport object to SummaryReport object. 
+        - **`overwrite`**  `(bool, optional)`: Will only overwrite existing data at path if overwrite=True. Defaults to False.
     
 
--   #### `class SubsetVenduData(data, subset)`  
+-   #### `class SubsetReportData(data, subset)`  
 
-    Class for iterating through only a subset of elements in data. Inherits from VenduData. 
+    Iterable class for iterating over only a subset of the elements in input data.
 
-    **Parameters**  
-    - **`data`**: VenduData-object to make subset from. `type VenduData`.  
-    - **`subset`**: Ids of reports to include. Should be a subset of the ids of the reports in `data`. `type list(string)`.  
+    **Arguments**  
+    - **`data`**  `(iterable[SummaryReport])`: Input data with all elements.
+    - **`subset`**  `(list[str])`: Ids of elements to include in subset for iteration. 
     
 
 -   #### `class LabelledVenduData(data, labels)`  
 
-    Class for adding labels to a subset of elements in data. 
-    Object will be an iterable of tuple(element, tuple(float, float)), where
-    the first float represents the probability of the summary being bad, and the 
-    second float is the probability of summary being good. 
+    Class for adding labels to a subset of elements in data. Becomes `iterable[tuple(element, tuple(float, float))]`, where the first float represents the probability of the summary being bad, and the second float is the probability of summary being good. 
 
-    **Parameters**  
-    - **`data`**: VenduData-object to make subset from. `type VenduData`.  
-    - **`labels`**: Probabilistic labels, where report ids are expected to be found in the index. `type pandas.DataFrame` 
+    **Arguments** 
+    - **`data`**  `(iterable[SummaryReport])`: Input data with elements. 
+    - **`labels`**  `(pd.DataFrame)`: Probabilistic labels. Report ids are expected to be found in index, while the columns 'prob_bad' and 'prob_good' are expected. 
 
 
 ## weak_supervision.py 
   
--   #### `class GenerativeModel()`  
+-   #### `class WSLabelModel()`  
 
     Class for weak supervision generative model, used for making labels.  
     
@@ -343,39 +340,58 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
    
         Trains the model on the input data.  
         
-        - **Parameter `data`**: Data for training the generative model. `type iterable(SummaryReport)` 
+        - **Argument `data`**  `(iterable[SummaryReport])`: Data for training the generative model.
           
           
     -   **`GenerativeModel.predict(data)`**  
     
-        Fit model on data.  
+        Fit model on data. If data is the same as the label model was trained on, it is much faster to use self.predict_training_set. 
          
-        - **Parameter `data`**: Data to be labelled by the model. `type iterable(SummaryReport)`.  
+        - **Argument `data`**  `(iterable[SummaryReport])`: Data to predict labels on.
           
-        - **Return:** Probabilistic labels for input data, with ids on the index. `type pandas.DataFrame`.  
+        - **Return** `(pd.DataFrame)`: Probabilistic labels for data, with ids in index. 
           
           
     -   **`GenerativeModel.predict_training_set()`**  
     
-        Fit model on training data. Much faster than calling `predict(data=training_data)`.  
+        Predict labels on the set that was used for training the model. Much faster than calling `predict(data=training_data)`, since it takes time to prepare dataset for labeling functions. 
+
       
-        - **Return:** Probabilistic labels for the data that the model was trained on, with ids on the index. `type pandas.DataFrame`.  
+        - **Return**  `(pd.DataFrame)`: Probabilistic labels for the data that the model was trained on, with ids in the index. 
           
+    -   **`GenerativeModel.analyse_training_set(latexpath=None)`**  
+    
+        Perform analysis of labeling functions. Prints coverage, overlap and conflict rates for the labeling functions. 
+        
+        - **Parameter `latexpath`**  `(str, optional)`: Save analysis to txt file, in latex table format. Defaults to None (no saving to file).
+        
+        
+    -   **`GenerativeModel.print_estimated_accuracies()`**  
+    
+        Print estimated accuracy for the labeling functions.
+        
+        
+    -   **`GenerativeModel.plot_training_labels(name=None)`**  
+    
+        Plot estimated weak supervision labels for training set.
+        
+        - **Argument `name`**  `(str, optional)`: Filename for saving plot. Defaults to None (no saving).
+            
             
     -   **`GenerativeModel.save(modelname='default')`**  
     
         Save model to file.  
         
-        - **Parameter `modelname`**: Give name to the model. Filename will be based on this name. `type string`.  
+        - **Parameter `modelname`**  `(str, optional)`: Filename for saving. Defaults to 'default'.
           
           
     -   **`GenerativeModel.load(modelname='default')`**  
     
-        Load model from file.  
+        Load previously saved label model from file. 
       
-        - **Parameter `modelname`**: Name of model to load. Filename is based on this name. `type string`.  
+        - **Parameter `modelname`**  `(str, optional)`: Filename to load from. Defaults to 'default'.
         
-        - **Return:** Self, so that one can write `model = GenerativeModel.load(modelname)`. `type GenerativeModel`.  
+        - **Return**  `(WSLabelModel)`: Self, so that one can write `model = WSLabelModel.load(modelname)`. 
    
 
 ## utils.py
