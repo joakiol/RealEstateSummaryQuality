@@ -342,7 +342,7 @@ This documentation includes a short description of all classes and functions tha
    
         Trains the model on the input data.  
         
-        - **Argument `data`**  `(iterable[SummaryReport])`: Data for training the generative model.
+        - **Argument `data`**  `(iterable[SummaryReport])`: Data for training the label model.
           
           
     -   **`WSLabelModel.predict(data)`**  
