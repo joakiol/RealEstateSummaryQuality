@@ -218,6 +218,8 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
 
 # Documentation
 
+This documentation includes a short description of all classes and functions that are meant to be used by a user. There are more classes and functions that a user should not have to use herself, which is indicated in the code with an underscore before class/function name. See docstrings in the code for an explanation of functionality for such classes/functions. 
+
 ## common.py
   
 -   #### `class Cadastre(Knr, Gnr, Bnr, Fnr, Snr, Anr)`  
@@ -300,7 +302,7 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
     - **`collate`**  `([func, optional)`: Apply func to batches. Used for PackedSequence stuff with LSTM. Defaults to None.
     
     **Methods**
-    -   **`create(self, data, apply=None, overwrite=False)`**  
+    -   **`ReportData.create(self, data, apply=None, overwrite=False)`**  
     
         Store dataset to path from input data. Can apply function to data before storing. 
         
@@ -336,14 +338,14 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
     
     **Methods**  
   
-    -   **`GenerativeModel.train(data)`**  
+    -   **`WSLabelModel.train(data)`**  
    
         Trains the model on the input data.  
         
         - **Argument `data`**  `(iterable[SummaryReport])`: Data for training the generative model.
           
           
-    -   **`GenerativeModel.predict(data)`**  
+    -   **`WSLabelModel.predict(data)`**  
     
         Fit model on data. If data is the same as the label model was trained on, it is much faster to use self.predict_training_set. 
          
@@ -352,40 +354,40 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
         - **Return** `(pd.DataFrame)`: Probabilistic labels for data, with ids in index. 
           
           
-    -   **`GenerativeModel.predict_training_set()`**  
+    -   **`WSLabelModel.predict_training_set()`**  
     
         Predict labels on the set that was used for training the model. Much faster than calling `predict(data=training_data)`, since it takes time to prepare dataset for labeling functions. 
 
       
         - **Return**  `(pd.DataFrame)`: Probabilistic labels for the data that the model was trained on, with ids in the index. 
           
-    -   **`GenerativeModel.analyse_training_set(latexpath=None)`**  
+    -   **`WSLabelModel.analyse_training_set(latexpath=None)`**  
     
         Perform analysis of labeling functions. Prints coverage, overlap and conflict rates for the labeling functions. 
         
         - **Parameter `latexpath`**  `(str, optional)`: Save analysis to txt file, in latex table format. Defaults to None (no saving to file).
         
         
-    -   **`GenerativeModel.print_estimated_accuracies()`**  
+    -   **`WSLabelModel.print_estimated_accuracies()`**  
     
         Print estimated accuracy for the labeling functions.
         
         
-    -   **`GenerativeModel.plot_training_labels(name=None)`**  
+    -   **`WSLabelModel.plot_training_labels(name=None)`**  
     
         Plot estimated weak supervision labels for training set.
         
         - **Argument `name`**  `(str, optional)`: Filename for saving plot. Defaults to None (no saving).
             
             
-    -   **`GenerativeModel.save(modelname='default')`**  
+    -   **`WSLabelModel.save(modelname='default')`**  
     
         Save model to file.  
         
         - **Parameter `modelname`**  `(str, optional)`: Filename for saving. Defaults to 'default'.
           
           
-    -   **`GenerativeModel.load(modelname='default')`**  
+    -   **`WSLabelModel.load(modelname='default')`**  
     
         Load previously saved label model from file. 
       
