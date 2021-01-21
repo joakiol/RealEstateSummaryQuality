@@ -297,7 +297,7 @@ Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
     - **`shuffle_buffer_size`**  `(int, optional)`: WebDataset shuffles data by putting elements into a buffer with given size. Defaults to 1 (no shuffle).
     - **`apply`**  `(func, optional)`: Apply function to elements in data. Defaults to None (no func).
     - **`batch_size`**  `(int, optional)`: Data can be loaded in batches. Defaults to 1 (no batching).
-    - **`collate`**  `([func, optional)`: Apply func to batches. Defaults to None.
+    - **`collate`**  `([func, optional)`: Apply func to batches. Used for PackedSequence stuff with LSTM. Defaults to None.
     
     **Methods**
     -   **`create(self, data, apply=None, overwrite=False)`**  
