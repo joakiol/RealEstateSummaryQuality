@@ -537,7 +537,7 @@ This documentation includes a short description of all classes and functions tha
     - **`epochs`**  `(int, optional)`: Number of epochs when training model. Defaults to 30.
     - **`learning_rate`**  `(float, optional)`: Initial learning rate. Defaults to 1e-4.
     - **`tau_good`**  `(float, optional)`: Tau_good to use for training model. Defaults to 0.2.
-    - **`tau_bad`**  `(float, optional)`: Tau_good to use for training model. Defaults to -0.2.
+    - **`tau_bad`**  `(float, optional)`: Tau_bad to use for training model. Defaults to -0.2.
 
 
 -   #### `class LSTMModel(lstm_dim=100, num_lstm=1, bi_dir=False, output_dim=100, batch_size=64, dropout=0, epochs=30, learning_rate=1e-3, tau_good=0.2, tau_bad=-0.2)`  
@@ -554,7 +554,7 @@ This documentation includes a short description of all classes and functions tha
     - **`epochs`**  `(int, optional)`: Number of epochs in training model. Defaults to 30.
     - **`learning_rate`**  `(float, optional)`: Initial learning rate for training model. Defaults to 1e-3.
     - **`tau_good`**  `(float, optional)`: Tau_good to use for training model. Defaults to 0.2.
-    - **`tau_bad`**  `(float, optional)`: Tau_good to use for training model. Defaults to -0.2.
+    - **`tau_bad`**  `(float, optional)`: Tau_bad to use for training model. Defaults to -0.2.
 
 
 -   #### `class CNNModel(embedding_size=100, output_size=200, kernels=[2,3,5,7,10], batch_size=64, dropout=0.1, epochs=30, learning_rate=1e-2, tau_good=0.2, tau_bad=-0.2)`  
@@ -568,9 +568,9 @@ This documentation includes a short description of all classes and functions tha
     - **`batch_size`**  `(int, optional)`: Batch size for training model. Defaults to 64.
     - **`dropout`**  `(float, optional)`: Dropout rate for training model. Defaults to 0.1.
     - **`epochs`**  `(int, optional)`: Number of epochs when training model. Defaults to 30.
-    - **`learning_rate`**  `(float, optional)`: Initial learning rate for training model. Defaults to 0.001.
+    - **`learning_rate`**  `(float, optional)`: Initial learning rate for training model. Defaults to 1e-2.
     - **`tau_good`**  `(float, optional)`: Tau_good to use for training model. Defaults to 0.2.
-    - **`tau_bad`**  `(float, optional)`: Tau_good to use for training model. Defaults to -0.2.
+    - **`tau_bad`**  `(float, optional)`: Tau_bad to use for training model. Defaults to -0.2.
     
     
 -   #### `class EmptyModel()`  
