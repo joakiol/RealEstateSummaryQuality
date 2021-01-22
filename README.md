@@ -23,7 +23,7 @@ The necessary packages for these files are found in requirements.txt.
 
 Vendu has implemented the class `ConditionReport`, which represents a real-estate condition report. In this project, the class `SummaryReport` has also been implemented, which inherits from the `ConditionReport` class, and has implemented some additional methods that are useful for this project. 
 
-The models of this work expect data input as an iterable of SummaryReport objects (with corresponding labels, when appropriate). In this project, the iterable class `ReportData` has been implemented for creating and representing datasets. This makes use of the WebDataset package, which stores data in .tar archives that can be streamed from disk, such that iterating becomes memory-friendly.  This class is used by our models for storing data at different stages (pre-processed, embedded, etc.), and is also convenient to use for our dataset. A dataset of SummaryReports can be made from an iterable of ConditionReport-objects the following way:
+The models of this work expect data input as an iterable of SummaryReport objects (with corresponding labels, when appropriate). In this project, the iterable class `ReportData` has been implemented for creating and representing datasets. This makes use of the WebDataset package, which stores data in .tar archives that can be streamed from disk, such that iterating becomes memory-friendly.  The `ReportData` class is used by our models for storing data at different stages (pre-processed, embedded, etc.), and is also made to be used to represent our dataset of real-estate condition reports. A dataset of SummaryReports can be made from a list/iterable of ConditionReport-objects the following way:
 
 ```python
 import pickle
@@ -38,7 +38,7 @@ print("Done!")
 data = ReportData(path='data/dataset')
 data.create(data=list_of_ConditionReport)
 ```
-The above code will save the data to file at './data/dataset', and will only have to run once. Afterwards, the dataset can be initialized by:
+The above code will save the dataset to file at './data/dataset', and will only have to run once. Afterwards, the dataset can be initialized by:
 ```python
 data = ReportData(path='data/dataset')
 
@@ -50,7 +50,7 @@ for idx, report in enumerate(data):
 
 ### Making weak supervision labels
 
-Now that a dataset of appropriate structure has been created, we can train a weak supervision label model to make weak supervision labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
+Now that a dataset of appropriate structure has been created, we can train a weak supervision label model to make noisy labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
 
 ```python
 from weak_supervision import WSLabelModel
@@ -67,7 +67,11 @@ label_model = WSLabelModel().load(modelname='default')
 
 # Predict labels on the data that the model was trained on
 labels = label_model.predict_training_set()
+```
 
+We analyse our label model and labeling functions the following way: 
+
+```python
 print("\nLabeling function analysis:")
 label_model.analyse_training_set()
 print("\nEstimated labeling function accuracies:")
@@ -148,6 +152,8 @@ q_test = model.predict(data_name='test', data=test, overwrite_emb=False)
 We evaluate our models the following way:
 
 ```python
+import pandas as pd
+
 # Get qualitites for val and test set from saved files
 quality_val = pd.read_csv('predictions/LSA+LinTrans_val.csv', index_col=0, squeeze=True)
 quality_test = pd.read_csv('predictions/LSA+LinTrans_test.csv', index_col=0, squeeze=True)
@@ -213,7 +219,7 @@ EmbLayer_CNN = SummaryQualityModel(embedder=vocabulary, model=CNN)
 # Word2vec+CNN
 Word2vec = Word2vecEmbedder()
 CNN = CNNModel()
-Word2vec+CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
+Word2vec_CNN = SummaryQualityModel(embedder=Word2vec, model=CNN)
 ```
 
 # Documentation
@@ -291,7 +297,7 @@ This documentation includes a short description of all classes and functions tha
   
 -   #### `class ReportData(path, print_progress=True, shuffle_buffer_size=1, apply=None, batch_size=1, collate=None)`
   
-    Iterable class object for storing and iterating over data. Used extensively in this project for storing data in different formats that makes training faster and more practical. Takes a path as input, and can either iterate over existing data at this path, or create new data to path. Various arguments for different use cases. Stores data in WebDataset format (tar archives), for memory-friendly reading. 
+    Iterable class for storing and iterating over data. Used extensively in this project for storing data in different formats that makes training faster and more practical. Takes a path as input, and can either iterate over existing data at this path, or create new data to path. Various arguments for different use cases. Stores data in WebDataset format (tar archives), for memory-friendly reading. 
   
     **Arguments**  
     - **`path`**  `(str)`: Path to store/read data to/from. 
@@ -299,7 +305,7 @@ This documentation includes a short description of all classes and functions tha
     - **`shuffle_buffer_size`**  `(int, optional)`: WebDataset shuffles data by putting elements into a buffer with given size. Defaults to 1 (no shuffle).
     - **`apply`**  `(func, optional)`: Apply function to elements in data. Defaults to None (no func).
     - **`batch_size`**  `(int, optional)`: Data can be loaded in batches. Defaults to 1 (no batching).
-    - **`collate`**  `([func, optional)`: Apply func to batches. Used for PackedSequence stuff with LSTM. Defaults to None.
+    - **`collate`**  `(func, optional)`: Apply func to batches. Used for PackedSequence stuff with LSTM. Defaults to None.
     
     **Methods**
     -   **`ReportData.create(self, data, apply=None, overwrite=False)`**  
@@ -307,8 +313,8 @@ This documentation includes a short description of all classes and functions tha
         Store dataset to path from input data. Can apply function to data before storing. 
         
         **Arguments**  
-        - **`data`**  `(iterator)`: Any iterator type. 
-        - **`apply`**  `(func, optional)`: Apply any function to data elements before storing. Defaults to transforming ConditionReport object to SummaryReport object. 
+        - **`data`**  `(iterator)`: Iterator of any type. 
+        - **`apply`**  `(func, optional)`: Apply any function to data elements before storing. Defaults to transforming ConditionReport object to SummaryReport object. Given function must return a dictionary in the following format: `dict{'__key__': <id of element>, '<something>.pyd': <store object here>, ...}`.
         - **`overwrite`**  `(bool, optional)`: Will only overwrite existing data at path if overwrite=True. Defaults to False.
     
 
@@ -347,7 +353,7 @@ This documentation includes a short description of all classes and functions tha
           
     -   **`WSLabelModel.predict(data)`**  
     
-        Fit model on data. If data is the same as the label model was trained on, it is much faster to use self.predict_training_set. 
+        Fit model on data. If data is the same as the label model was trained on, it is much faster to use `WSLabelModel.predict_training_set()`. 
          
         - **Argument `data`**  `(iterable[SummaryReport])`: Data to predict labels on.
           
@@ -356,42 +362,42 @@ This documentation includes a short description of all classes and functions tha
           
     -   **`WSLabelModel.predict_training_set()`**  
     
-        Predict labels on the set that was used for training the model. Much faster than calling `predict(data=training_data)`, since it takes time to prepare dataset for labeling functions. 
+        Predict labels on the set that was used for training the model. Much faster than calling `WSLabelModel(data=data)` if `data` was also used to train the label model, since pre-processing already has been performed in that case. 
 
       
-        - **Return**  `(pd.DataFrame)`: Probabilistic labels for the data that the model was trained on, with ids in the index. 
+        - **Return**  `(pd.DataFrame)`: Probabilistic labels for the data that the model was trained on, with ids in the index, and the columns `prob_good` and `prob_bad`. 
           
     -   **`WSLabelModel.analyse_training_set(latexpath=None)`**  
     
-        Perform analysis of labeling functions. Prints coverage, overlap and conflict rates for the labeling functions. 
+        Perform analysis of labeling functions based on the data that the label model was trained on. Prints coverage, overlap and conflict rates for the labeling functions. 
         
         - **Parameter `latexpath`**  `(str, optional)`: Save analysis to txt file, in latex table format. Defaults to None (no saving to file).
         
         
     -   **`WSLabelModel.print_estimated_accuracies()`**  
     
-        Print estimated accuracy for the labeling functions.
+        Print estimated accuracies for the labeling functions, based on the data that the label model was trained on.
         
         
     -   **`WSLabelModel.plot_training_labels(name=None)`**  
     
-        Plot estimated weak supervision labels for training set.
+        Plot estimated weak supervision labels for the data the label model was trained on.
         
-        - **Argument `name`**  `(str, optional)`: Filename for saving plot. Defaults to None (no saving).
+        - **Argument `name`**  `(str, optional)`: Determines filename for saving plot. Defaults to None (no saving).
             
             
     -   **`WSLabelModel.save(modelname='default')`**  
     
         Save model to file.  
         
-        - **Parameter `modelname`**  `(str, optional)`: Filename for saving. Defaults to 'default'.
+        - **Parameter `modelname`**  `(str, optional)`: Determines filename for saving model. Defaults to 'default'.
           
           
     -   **`WSLabelModel.load(modelname='default')`**  
     
         Load previously saved label model from file. 
       
-        - **Parameter `modelname`**  `(str, optional)`: Filename to load from. Defaults to 'default'.
+        - **Parameter `modelname`**  `(str, optional)`: Determines filename to load from. Defaults to 'default'.
         
         - **Return**  `(WSLabelModel)`: Self, so that one can write `model = WSLabelModel().load(modelname)`. 
    
@@ -404,8 +410,8 @@ This documentation includes a short description of all classes and functions tha
     Split input data into a train, val and test set. 
   
     **Arguments**  
-    - **`labels`**  `(pd.DataFrame)`: Labels with report ids in index. 
-    - **`ratio`**  `(list, optional)`: Size of train, val and test. Defaults to [0.8, 0.1, 0.1].
+    - **`labels`**  `(pd.DataFrame)`: Labels with report ids in index and columns `prob_good` and `prob_bad`. 
+    - **`ratio`**  `(list[float], optional)`: Size of train, val and test. Defaults to [0.8, 0.1, 0.1].
     - **`seed`**  `(int, optional)`: Seed for shuffling. Defaults to 1.
     
     **Return**  
@@ -420,10 +426,10 @@ This documentation includes a short description of all classes and functions tha
   
     **Arguments** 
     - **`quality`**  `(pd.Series)`: Quality measures to plot. Ids are expected in index. 
-    - **`labels`**  `(pd.DataFrame, optional)`: Labels to use for determining which are good and bad summaries. Defaults to False, in which case only one distribution is shown.
+    - **`labels`**  `(pd.DataFrame, optional)`: Labels to use for determining which are good and bad summaries. Ids on index and columns `prob_good` and `prob_bad` are expected. Defaults to False, in which case only one distribution is shown.
     - **`name`**  `(str, optional)`: Save name. Defaults to False (no saving).
     - **`title`**  `(str, optional)`: Title. Defaults to False (No title).
-    - **`lab`**  `(bool, optional)`: Whether labels should be shown in plot. Defaults to False.
+    - **`lab`**  `(bool, optional)`: Whether legends should be used in plot. Defaults to False.
     - **`show`**  `(bool, optional)`: Whether to show plot. Defaults to True.
     - **`all`**  `(bool, optional)`: Whether distribution of all qualitites should be shown in grey background. Defaults to False.
     - **`density`**  `(bool, optional)`: Whether normalization of distributions should be performed. Defaults to True.
@@ -436,7 +442,7 @@ This documentation includes a short description of all classes and functions tha
   
     **Arguments**  
     - **`quality`**  `(pd.Series)`: Predicted qualities, with ids on index. 
-    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index. 
+    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index, and columns `prob_good` and `prob_bad`. 
     - **`tau_good`**  `(float)`: Which tau_good to use for loss function. 
     - **`tau_bad`**  `(float)`: Which tau_bad to use for loss function. 
     
@@ -449,7 +455,7 @@ This documentation includes a short description of all classes and functions tha
   
     **Arguments**  
     - **`quality`**  `(pd.Series)`: Predicted qualities, with ids on index. 
-    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index. 
+    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index, and columns `prob_good` and `prob_bad`. 
     
     **Return**  `(float)`: Threshold that maximizes accuracy. 
 
@@ -460,7 +466,7 @@ This documentation includes a short description of all classes and functions tha
   
     **Arguments**  
      - **`quality`**  `(pd.Series)`: Predicted qualities, with ids on index. 
-    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index. 
+    - **`labels`**  `(pd.DataFrame)`: Labels, with ids on index, and columns `prob_good` and `prob_bad`. 
     - **`best_threshold`** `(float)`: Threshold to use for classifying good/bad summaries. 
     
     **Return**  
