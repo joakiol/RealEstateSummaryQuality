@@ -11,7 +11,7 @@ import pickle
 
 from labeling_functions import LABELING_FUNCTIONS, prepare_data_for_labeling_functions
 
-class LabelModel:
+class WSLabelModel:
     def __init__(self):
         """Class for weak supervision label model, used for making labels."""        
         self.labeling_functions = LABELING_FUNCTIONS
@@ -73,7 +73,7 @@ class LabelModel:
             RuntimeError: If model has not been trained, it cannot predict labels. 
 
         Returns:
-            pd.DataDrame: Probabilistic labels for data, with ids in index. 
+            pd.DataDrame: Probabilistic labels for the data the model was trained on, with ids in the index. 
         """        
         if self.model == None:
             raise RuntimeError("Model must be trained before predict-method is called. ")
@@ -84,7 +84,8 @@ class LabelModel:
         return pd.DataFrame({'prob_bad': probs[:,0], 'prob_good': probs[:,1]}, index=df.index)
 
     def analyse_training_set(self, latexpath=None):
-        """Perform analysis of labeling functions. 
+        """Perform analysis of labeling functions. Prints coverage, overlap and conflict
+        rates for the labeling functions. 
 
         Args:
             latexpath (str, optional): Save analysis to txt file, in latex table format. 
@@ -101,9 +102,12 @@ class LabelModel:
                         predicted = 'Good'
                     f.write(f"{line['j']+1} & {predicted} & {100*line['Coverage']:.1f} \% & {100*line['Overlaps']:.1f} \% & {100*line['Conflicts']:.1f} \% \\\ \n")
 
+    def print_estimated_accuracies(self):
+        """Print estimated accuracy for the labeling functions."""        
+        print(self.model.get_weights())
 
     def plot_training_labels(self, name=None):
-        """Plot resulting labels for training set
+        """Plot estimated weak supervision labels for training set.
 
         Args:
             name (str, optional): Filename for saving plot. Defaults to None (no saving).
@@ -152,7 +156,7 @@ class LabelModel:
             NameError: Raises error if given modelname is not a prevously saved model. 
 
         Returns:
-            LabelModel: self
+            LabelModel: Self, so that one can write `label_model = WSLabelModel().load(modelname)`.
         """        
         path = 'models/WeakSupervision/%s' % modelname
         try:

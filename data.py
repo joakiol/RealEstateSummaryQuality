@@ -6,6 +6,7 @@ import pickle
 from torch.utils.data import DataLoader
 import copy
 import random
+from common import ConditionReport, SummaryReport
 
 class progress_bar:
     def __init__(self, iterator, length):
@@ -88,13 +89,13 @@ class buffer_shuffler:
             self.complete = True
 
 class BufferShuffler:
-    """A rather special class, which takes an iterator as input. This iterator is expected
-        to have elements that are lists. The goal of this class is to create an iterator that 
-        returns a single element from these lists at a time. This is done by putting all
-        elements in the lists of the input iterator into a buffer, and then popping elements
-        from this buffer, one at a time. The buffer is kept at a constant size, and shuffled. 
-        Used when training LSA/Word2vec/Doc2vec on e.g. sentences, when the input data is
-        stored as list of list of words (list[list[str]]). 
+    """A rather special class, which takes an iterator as input. The input iterator is expected
+    to have elements that are lists. The goal of this class is to create an iterator that 
+    returns a single element from these lists at a time. This is done by putting all
+    elements in the lists of the input iterator into a buffer, and then popping elements
+    from this buffer, one at a time. The buffer is kept at a constant size, and shuffled. 
+    Used when training LSA/Word2vec/Doc2vec on e.g. sentences, when the input data is
+    stored as list of list of words (list[list[str]]). 
     """    
     def __init__(self, iterable, apply, buffer_size=1):
         self.iterable = iterable
@@ -123,7 +124,7 @@ class ReportData:
                                                  Defaults to 1 (no shuffle).
             apply (func, optional): Apply function to elements in data. Defaults to None (no func).
             batch_size (int, optional): Data can be loaded in batches. Defaults to 1 (no batching).
-            collate ([func, optional): Apply func to batches. Defaults to None.
+            collate (func, optional): Apply func to batches. Used for PackedSequence stuff with LSTM. Defaults to None.
         """        
         self.path = path
         self.print_progress = print_progress

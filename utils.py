@@ -62,9 +62,9 @@ def plot_quality(quality, labels=False, name=False, title=False, lab=False, show
     """Plot two distributions, one for good summaries, and one for bad.
 
     Args:
-        quality (list[float]): Quality measures to plot. 
-        labels (bool, optional): Labels to use for determining which are good and bad summaries. 
-                                 Defaults to False, in which case only one distribution are shown.
+        quality (pd.Series): Quality measures to plot. Ids are expected in index. 
+        labels (pd.DataFrame, optional): Labels to use for determining which are good and bad summaries. 
+                                 Defaults to False, in which case only one distribution is shown.
         name (str, optional): Save name. Defaults to False (no saving).
         title (str, optional): Title. Defaults to False (No title).
         lab (bool, optional): Whether labels should be shown in plot. Defaults to False.
@@ -154,7 +154,7 @@ def noise_aware_cosine_loss(quality, labels, tau_good, tau_bad):
         tau_bad (float): Which tau_bad to use for loss function. 
 
     Returns:
-        float: Noise aware cosine embedding loss for input qualities (with labels). 
+        float: Noise aware cosine embedding loss for input qualities and labels. 
     """    
     labels['quality'] = quality
     good = np.clip(tau_good - labels['quality'], a_min=0, a_max=2)
@@ -188,8 +188,8 @@ def get_best_threshold(quality, labels):
     return best_threshold
 
 def classification_scores(quality, labels, best_threshold):
-    """Calculates accuracy, recall, precision and F1-score on the labels, by using a 
-    "maximum accuracy" threshold for classifying
+    """Calculates accuracy, recall, precision and F1-score on the labels, by using  
+    given threshold for classifying
 
     Args:
         quality (pd.Series): Predicted qualities, with ids on index. 

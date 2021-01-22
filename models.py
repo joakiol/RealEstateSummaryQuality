@@ -367,7 +367,7 @@ class FFNModel:
                                       self.learning_rate, self.update_step_every, self.epochs)
         self.model = self.trainer.train(train_path, val_path)
 
-   def _embed(self, path, embedder, print_progress):
+    def _embed(self, path, embedder, print_progress):
         if self.trainer == None:
             raise RuntimeError("Model is not trained. Train model before embedding. ")
         return self.trainer.embed(path, print_progress)
@@ -449,7 +449,7 @@ class LSTMModel:
         return self.trainer.embed(path, print_progress, collate=self._collate_test)
 
 class CNNModel:
-    def __init__(self, embedding_size=100, output_size=100, kernels=[2,3,5,7,10], batch_size=64, 
+    def __init__(self, embedding_size=100, output_size=200, kernels=[2,3,5,7,10], batch_size=64, 
                        dropout=0.1, epochs=30, learning_rate=1e-2, tau_good=0.2, tau_bad=-0.2):
         """CNN summary quality model, for use together with VocabularyEmbedder or Word2vecEmbedder.
 
@@ -577,15 +577,15 @@ class SummaryQualityModel:
         out['__key__'] = element['__key__']
 
         if isinstance(element['report.pyd'][0], list):
-            z_r = np.array([self.embedder.embed(doc) for doc in element['report.pyd']])
+            z_r = np.array([self.embedder._embed(doc) for doc in element['report.pyd']])
         else:
-            z_r = self.embedder.embed(element['report.pyd'])
+            z_r = self.embedder._embed(element['report.pyd'])
         out['report.pth'] = torch.from_numpy(z_r).float()
 
         if isinstance(element['summary.pyd'][0], list):
-            z_s = np.array([self.embedder.embed(doc) for doc in element['summary.pyd']])
+            z_s = np.array([self.embedder._embed(doc) for doc in element['summary.pyd']])
         else:
-            z_s = self.embedder.embed(element['summary.pyd']) 
+            z_s = self.embedder._embed(element['summary.pyd']) 
         out['summary.pth'] = torch.from_numpy(z_s).float()
 
         if 'labels.pyd' in element.keys():
@@ -689,7 +689,7 @@ class SummaryQualityModel:
         path = self.prepare_data(data_name, data, overwrite=overwrite, overwrite_emb=overwrite_emb)
         return self.model._embed(path, self.embedder, print_progress)
 
-    def predict(self, data_name, data, overwrite=False, overwrite_emb=False):
+    def predict(self, data_name, data, overwrite=False, overwrite_emb=True):
         """Return predicted qualitites for input data. 
 
         Args:
