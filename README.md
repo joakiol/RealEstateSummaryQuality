@@ -468,3 +468,53 @@ This documentation includes a short description of all classes and functions tha
     - **`precision`**  `(float)`: Precision for given qualities and threshold. 
     - **`recall`**  `(float)`: Recall for given qualities and threshold. 
     - **`f_one`**  `(float)`: F1_score for given qualities and threshold. 
+
+
+## models.py
+
+
+-   #### `class TFIDFEmbedder(no_below=15000, remove_stopwords=False)`  
+  
+    TF-IDF embedder, which was tested as an alternative to LSA. 
+  
+    **Arguments**  
+    - **`no_below`**  `(int, optional)`: Number of documents a word must appear in for it to be included in the vocabulary. Defaults to 15000.
+    - **`remove_stopwords`**  `(bool, optional)`: Whether stopwords should be removed. Defaults to False.
+
+  
+-   #### `class LSAEmbedder(dim=500, no_below=15000, no_above=1, filter_most_frequent=0, remove_stopwords=False)`  
+  
+    LSA embedder, to be used together with FFN or LSTM. 
+  
+    **Arguments**  
+    - **`dim`**  `(int, optional)`: Dimensionality of embeddings. Defaults to 500.
+    - **`no_below`**  `(int, optional)`: Number of documents a word must appear in for it to be included in the vocabulary. Defaults to 15000.
+    - **`no_above`**  `(int, optional)`: Maximum fraction of documents a word can be in for it to be included in the vocabulary. Defaults to 1.
+    - **`filter_most_frequent`**  `(int, optional)`: Most frequent words removed. Defaults to 0.
+    - **`remove_stopwords`**  `(bool, optional)`: Whether stopwords should be removed. Defaults to False.
+   
+  
+-   #### `class Doc2vecEmbedder(dim=100, window=6, mc=20, workers=4, dm=0, epochs=50)`  
+  
+    Doc2vec embedder, to be used together with FFN or LSTM. 
+  
+    **Arguments**  
+    - **`dim`**  `(int, optional)`: Dimensionality of doc embeddings. Defaults to 500.
+    - **`window`**  `(int, optional)`: Window size in Word2vec. Defaults to 10.
+    - **`mc`**  `(int, optional)`: Number of times word must appear to be included in vocabulary. Defaults to 20.
+    - **`workers`**  `(int, optional)`: Workers in training process. Defaults to 4.
+    - **`dm`**  `(int, optional)`: Whether PV-DM version should be used. Defaults to 0 (PV-DBOW).
+    - **`epochs`**  `(int, optional)`: Number of training epochs in Doc2vec. Defaults to 50.
+    
+    
+-   #### `class Doc2vecEmbedder(dim=100, window=6, mc=20, workers=4, dm=0, epochs=50)`  
+  
+    Doc2vec embedder, to be used together with FFN or LSTM. 
+  
+    **Arguments**  
+    - **`dim`**  `(int, optional)`: Dimensionality of doc embeddings. Defaults to 500.
+    - **`window`**  `(int, optional)`: Window size in Word2vec. Defaults to 10.
+    - **`mc`**  `(int, optional)`: Number of times word must appear to be included in vocabulary. Defaults to 20.
+    - **`workers`**  `(int, optional)`: Workers in training process. Defaults to 4.
+    - **`dm`**  `(int, optional)`: Whether PV-DM version should be used. Defaults to 0 (PV-DBOW).
+    - **`epochs`**  `(int, optional)`: Number of training epochs in Doc2vec. Defaults to 50.   
