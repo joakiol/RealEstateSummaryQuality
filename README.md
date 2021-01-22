@@ -586,7 +586,7 @@ This documentation includes a short description of all classes and functions tha
 
 -   #### `class SummaryQualityModel(embedder, model=EmptyModel())`
   
-    General class for summary quality models. Take an embedder and an optional neural network model as input, and combines them accordingly. 
+    General class for summary quality models. Takes an embedder and an optional neural network model as input, and combines them accordingly. 
   
     **Arguments**  
     - **`embedder`**  `(<any>Embedder)`: Embedder model to use in summary quality model.
@@ -601,8 +601,8 @@ This documentation includes a short description of all classes and functions tha
         - **`dataname`**  `(str)`: A name for the data to be prepared. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model. 
         - **`data`**  `(iterable[SummaryReport]/LabelledReportData)`: Data to prepare for training/testing. 
         - **`overwrite`**  `(bool, optional)`: Boolean indicator of whether existing pre-processed data should be overwritten. If `False`, any pre-processed data found at the path based on `dataname` will be used instead of the data in `data` argument. Defaults to False.
-        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then `train_embedder`should also be `True`.  Defaults to True.
-        - **`train_embedder`**  `(bool, optional)`: Whether embedder model should be trained.Defaults to False.
+        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then `train_embedder`should also be `True`.  Defaults to False.
+        - **`train_embedder`**  `(bool, optional)`: Whether embedder model should be trained. Defaults to False.
         
         **Returns**  `(str)`: Path to embedded data, ready for training neural network (returned path is used by the models, but should not be used by a user). 
         
@@ -643,7 +643,7 @@ This documentation includes a short description of all classes and functions tha
         - **`data_name`**  `(str)`: A name for the data to predict quality of. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model. 
         - **`data`**  `(iterable[SummaryReport]/LabelledReportData)`: Data to predict. 
         - **`overwrite`**  `(bool, optional)`: Boolean indicator of whether existing pre-processed data should be overwritten. If `False`, any pre-processed data found at the path based on `data_name` will be used instead of the data in `data` argument. Defaults to False.
-        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then the embedder part of the summary quality model must already be trained.  Defaults to False.
+        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then the embedder part of the summary quality model must already be trained.  Defaults to True.
         
         **Returns**  `(pd.Series)`: Predicted qualities of report summaries, with ids in index. 
         
