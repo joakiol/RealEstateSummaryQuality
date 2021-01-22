@@ -496,7 +496,7 @@ This documentation includes a short description of all classes and functions tha
   
 -   #### `class Doc2vecEmbedder(dim=100, window=6, mc=20, workers=4, dm=0, epochs=50)`  
   
-    Vocabulary embedder, for use together with CNN when making our own word embeddings. 
+    Doc2vec embedder, to be used together with FFN or LSTM. 
   
     **Arguments**  
     - **`dim`**  `(int, optional)`: Dimensionality of doc embeddings. Defaults to 100.
@@ -509,7 +509,7 @@ This documentation includes a short description of all classes and functions tha
     
 -   #### `class VocabularyEmbedder(vocab_length=20000)`  
   
-    Doc2vec embedder, to be used together with FFN or LSTM. 
+    Vocabulary embedder, for use together with CNN when making our own word embeddings. 
   
     **Argument `vocab_length`**  `(int, optional)`: Vocabulary size. Defaults to 20000.
     
