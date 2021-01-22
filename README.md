@@ -495,7 +495,7 @@ This documentation includes a short description of all classes and functions tha
     **Arguments**  
     - **`dim`**  `(int, optional)`: Dimensionality of embeddings. Defaults to 500.
     - **`no_below`**  `(int, optional)`: Number of documents a word must appear in for it to be included in the vocabulary. Defaults to 15000.
-    - **`no_above`**  `(int, optional)`: Maximum fraction of documents a word can be in for it to be included in the vocabulary. Defaults to 1.
+    - **`no_above`**  `(float, optional)`: Maximum fraction of documents a word can be in for it to be included in the vocabulary. Defaults to 1.
     - **`filter_most_frequent`**  `(int, optional)`: Most frequent words removed. Defaults to 0.
     - **`remove_stopwords`**  `(bool, optional)`: Whether stopwords should be removed. Defaults to False.
    
@@ -505,7 +505,7 @@ This documentation includes a short description of all classes and functions tha
     Doc2vec embedder, to be used together with FFN or LSTM. 
   
     **Arguments**  
-    - **`dim`**  `(int, optional)`: Dimensionality of doc embeddings. Defaults to 100.
+    - **`dim`**  `(int, optional)`: Dimensionality of document embeddings. Defaults to 100.
     - **`window`**  `(int, optional)`: Window size in Doc2vec. Defaults to 6.
     - **`mc`**  `(int, optional)`: Number of times word must appear to be included in vocabulary. Defaults to 20.
     - **`workers`**  `(int, optional)`: Workers in training process. Defaults to 4.
@@ -537,7 +537,7 @@ This documentation includes a short description of all classes and functions tha
     FFN summary quality model, for use together with TFIDF- LSA- or Doc2vecEmbedder.
   
     **Arguments**  
-    - **`layers`**  `(list, optional)`: Number of nodes to use in each layer. Number of layers becomes length of layers list. Defaults to [100].
+    - **`layers`**  `(list, optional)`: Number of nodes to use in each layer. Number of layers becomes length of layers list. Defaults to [100], which yields in a linear transformation only(LinTrans).
     - **`batch_size`**  `(int, optional)`: Batch size for training model. Defaults to 64.
     - **`dropout`**  `(float, optional)`: Dropout rate when training model. Defaults to 0.2.
     - **`epochs`**  `(int, optional)`: Number of epochs when training model. Defaults to 30.
@@ -569,7 +569,7 @@ This documentation includes a short description of all classes and functions tha
   
     **Arguments**  
     - **`embedding_size`**  `(int, optional)`: Dimensionality of word embeddings in EmbLayer/Word2vec. Defaults to 100.
-    - **`output_size`**  `(int, optional)`: Number of filters per filter size and nodes in final linear layer. Defaults to 100.
+    - **`output_size`**  `(int, optional)`: Number of filters per filter size and nodes in final linear layer. Defaults to 200.
     - **`kernels`**  `(list[int], optional)`: List of filter sizes. Total number of filters becomes len(kernels)*output_size. Defaults to [2,3,5,7,10].
     - **`batch_size`**  `(int, optional)`: Batch size for training model. Defaults to 64.
     - **`dropout`**  `(float, optional)`: Dropout rate for training model. Defaults to 0.1.
@@ -595,16 +595,16 @@ This documentation includes a short description of all classes and functions tha
     **Methods**
     -   **`SummaryQualityModel.prepare_data(dataname, data, overwrite=False, overwrite_emb=False, train_embedder=False)`**  
     
-        Prepare for training neural network part of model. Will pre-process data (if overwrite=True/not already done), train embedder model (if train_embedder=True) and embed textual data (if overwrite_emb=True/not already done). These embeddings will be stored, such that neural networks can be trained on them directly. 
+        Prepare for training/testing neural network part of model. Will pre-process data (if overwrite=True/not already done), train embedder model (if train_embedder=True) and embed textual data (if overwrite_emb=True/not already done). These embeddings are the input to the neural network part of the summary quality model, and will be stored such that the neural network can be trained efficiently. 
         
         **Arguments**  
-        - **`dataname`**  `(str)`: A name for the data to be used. Will determine the path for saving data. 
+        - **`dataname`**  `(str)`: A name for the data to be prepared. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model. 
         - **`data`**  `(iterable[SummaryReport]/LabelledReportData)`: Data to prepare for training/testing. 
-        - **`overwrite`**  `(bool, optional)`: Boolean indicator of whether existing pre-processed data should be overwritten. If False, the data at path will be used, even if it does not correspond to the input 'data'. Defaults to False.
-        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Defaults to False.
+        - **`overwrite`**  `(bool, optional)`: Boolean indicator of whether existing pre-processed data should be overwritten. If False, any pre-processed data found at the path based on `dataname` will be used instead of the data in `data` argument. Defaults to False.
+        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then `train_embedder`should also be `True`.  Defaults to True.
         - **`train_embedder`**  `(bool, optional)`: Whether embedder model should be trained.Defaults to False.
         
-        **Returns**  `(str)`: Path to embedded data, ready for training neural network. 
+        **Returns**  `(str)`: Path to embedded data, ready for training neural network (returned path is used by the models, but should not be used by a user). 
         
         
     -   **`SummaryQualityModel.train(train_name, train_data, val_name=None, val_data=None, overwrite=False, overwrite_emb=True, train_embedder=True)`**  
@@ -612,25 +612,25 @@ This documentation includes a short description of all classes and functions tha
         Train neural network part of data. Will first pre-process data (if overwrite=True/not already done), train embedder model (if train_embedder=True) and embed textual data (if overwrite_emb=True/not already done).
         
         **Arguments**  
-        - **`train_name`**  `(str)`: Name of training data. 
+        - **`train_name`**  `(str)`: A name for the training_data. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model. 
         - **`train_data`**  `(LabelledReportData)`: Training dataset. 
-        - **`val_name`**  `(str, optional)`: Name of validation data. Defaults to None (no val set used).
-        - **`val_data`**  `(LabelledReportData, optional)`: Val dataset. Defaults to None.
-        - **`overwrite`**  `(bool, optional)`: Whether existing pre-processed data with name 'train_name'/'val_name' should be overwritten. Defaults to False.
-        - **`overwrite_emb`**  `(bool, optional)`: Whether existing embeddings from embedder models with name 'train_name'/'val_name' should be overwritten. Defaults to True.
+        - **`val_name`**  `(str, optional)`: A name for the validation data. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model.  Defaults to None (no val set used).
+        - **`val_data`**  `(LabelledReportData, optional)`: Validation dataset. Defaults to None.
+        - **`overwrite`**  `(bool, optional)`: Boolean indicator of whether existing pre-processed data should be overwritten. If False, any pre-processed data found at the path based on `train_name`/`val_name` will be used instead of the data in `train_data`/`val_data` argument. Defaults to False.
+        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then `train_embedder`should also be `True`.  Defaults to True.
         - **`train_embedder`**  `(bool, optional)`: Whether embedder model should be trained. Defaults to True.
         
         
     -   **`SummaryQualityModel.embed(data_name, data, overwrite=False, print_progress=True, overwrite_emb=False)`**  
     
-        Return memory-friendly generator for embedded reports and summaries into the conceptual summary content space (see master thesis), ready for measuring quality (cossim). 
+        Return memory-friendly generator for embedded reports and summaries into the conceptual summary content space (see master thesis), ready for measuring quality (using cosine similarity). 
         
         **Arguments** 
-        - **`data_name`**  `(str)`: Name of data to embed.
-        - **`data`**  `(iterable[SummaryReport]/LabelledReportData)`: Data to create embeddings of. 
-        - **`overwrite`**  `(bool, optional)`: Whether existing pre-processed data with name 'data_name' should be overwritten. Defaults to False.
+        - **`data_name`**  `(str)`: A name for the data to embed. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model. 
+        - **`data`**  `(iterable[SummaryReport]/LabelledReportData)`: Data to create embeddings from. 
+        - **`overwrite`**  `(bool, optional)`: Boolean indicator of whether existing pre-processed data should be overwritten. If False, any pre-processed data found at the path based on `data_name` will be used instead of the data in `data` argument. Defaults to False.
         - **`print_progress`**  `(bool, optional)`: Whether progress of embedding should be printed. Defaults to True.
-        - **`overwrite_emb`**  `(bool, optional)`: Whether existing embeddings from embedder models with name 'data_name' should be overwritten. Defaults to False.
+        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then the embedder part of the summary quality model must already be trained.  Defaults to False.
         
         **Returns**  `(generator[dict{'id', 'z_r', 'z_s'}])`: Return memory friendly generator with embedder reports and summaries. 
         
@@ -640,17 +640,17 @@ This documentation includes a short description of all classes and functions tha
         Return predicted qualitites for input data. 
         
         **Arguments** 
-        - **`data_name`**  `(str)`: Name of data to predict quality of. 
+        - **`data_name`**  `(str)`: A name for the data to predict quality of. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model. 
         - **`data`**  `(iterable[SummaryReport]/LabelledReportData)`: Data to predict. 
-        - **`overwrite`**  `(bool, optional)`: Whether existing pre-processed data with name 'data_name' should be overwritten. Defaults to False.
-        - **`overwrite_emb`**  `(bool, optional)`: Whether existing embeddings from embedder models with data name 'data_name' should be overwritten. Defaults to False.
+        - **`overwrite`**  `(bool, optional)`: Boolean indicator of whether existing pre-processed data should be overwritten. If False, any pre-processed data found at the path based on `data_name` will be used instead of the data in `data` argument. Defaults to False.
+        - **`overwrite_emb`**  `(bool, optional)`: Whether new embeddings should be made by embedder model. Whenever `overwrite_emb=True`, then the embedder part of the summary quality model must already be trained.  Defaults to False.
         
         **Returns**  `(pd.Series)`: Predicted qualities of report summaries, with ids in index. 
         
         
     -   **`SummaryQualityModel.save(modelname='default')`**  
     
-        Save model, using pickle. Not well tested, current implementation might have trouble with saving, especially when models are large. 
+        Save model using pickle. Not well tested, current implementation might have trouble with saving, especially when models are large. 
         
         **Arguments** 
         - **`modelname`**  `(str, optional)`: Save to path based on modelname. Defaults to 'default'.
@@ -658,7 +658,7 @@ This documentation includes a short description of all classes and functions tha
         
     -   **`SummaryQualityModel.load(modelname='default')`**  
     
-        Load model, using pickle.
+        Load model using pickle.
         
         **Arguments** 
         - **`modelname`**  `(str, optional)`: Load from path with based on modelname. Defaults to 'default'.

@@ -148,7 +148,7 @@ class Word2vecEmbedder:
         return np.array(idx_list)
 
 class TFIDFEmbedder:
-    def __init__(self, dim=500, no_below=15000, remove_stopwords=False):
+    def __init__(self, no_below=15000, remove_stopwords=False):
         """TF-IDF embedder, which was tested as an alternative to LSA. 
 
         Args:
@@ -263,7 +263,6 @@ class LSAEmbedder:
         word_dict.filter_extremes(no_below=self.no_below, no_above=self.no_above, keep_n=None)
         word_dict.filter_n_most_frequent(self.fmf)
         self.word_dict = word_dict
-        print(len(self.word_dict))
 
         print("\nTraining LSA model...")
         self.tf_idf_model = TfidfModel(dictionary=self.word_dict, smartirs='nfc')
@@ -284,7 +283,7 @@ class Doc2vecEmbedder:
 
         Args:
             dim (int, optional): Dimensionality of doc embeddings. Defaults to 500.
-            window (int, optional): Window size in Word2vec. Defaults to 10.
+            window (int, optional): Window size in Doc2vec. Defaults to 6.
             mc (int, optional): Number of times word must appear to be included in 
                                 vocabulary. Defaults to 20.
             workers (int, optional): Workers in training process. Defaults to 4.
@@ -339,7 +338,7 @@ class FFNModel:
             epochs (int, optional): Number of epochs when training model. Defaults to 30.
             learning_rate (float, optional): Initial learning rate. Defaults to 1e-4.
             tau_good (float, optional): Tau_good to use for training model. Defaults to 0.2.
-            tau_bad (float, optional): Tau_good to use for training model. Defaults to -0.2.
+            tau_bad (float, optional): Tau_bad to use for training model. Defaults to -0.2.
         """
         self.name = 'FFN'
         self.storage_format = ''
@@ -379,19 +378,19 @@ class LSTMModel:
         """LSTM summary quality model, for use together with LSAEmbedder or Doc2vecEmbedder.
             
         Args:
-            lstm_dim (int): Dimensionality of LSTM cell. Defaults to 100.
-            num_lstm (int): Number of LSTM layers. Defaults to 1.
-            bi_dir (boolean): Whether bi-directional LSTM layers are employed or not. 
+            lstm_dim (int, optional): Dimensionality of LSTM cell. Defaults to 100.
+            num_lstm (int, optional): Number of LSTM layers. Defaults to 1.
+            bi_dir (boolean, optional): Whether bi-directional LSTM layers are employed or not. 
                               Defaults to False.
-            output_dim (int): Output dimensionality of final, fully connected linear layer. 
-                              Defaults to 100.
+            output_dim (int, optional): Output dimensionality of final, fully 
+                              connected linear layer. Defaults to 100.
             batch_size (int, optional): Batch size for training model. Defaults to 64.
-            dropout (float): Dropout rate for training model. Defaults to 0.
+            dropout (float, optional): Dropout rate for training model. Defaults to 0.
             epochs (int, optional): Number of epochs in training model. Defaults to 30.
             learning_rate (float, optional): Initial learning rate for training model. 
                                              Defaults to 1e-3.
             tau_good (float, optional): Tau_good to use for training model. Defaults to 0.2.
-            tau_bad (float, optional): Tau_good to use for training model. Defaults to -0.2.
+            tau_bad (float, optional): Tau_bad to use for training model. Defaults to -0.2.
         """
         self.name = 'LSTM'
         self.storage_format = 'sections_'
@@ -453,15 +452,12 @@ class CNNModel:
                        dropout=0.1, epochs=30, learning_rate=1e-2, tau_good=0.2, tau_bad=-0.2):
         """CNN summary quality model, for use together with VocabularyEmbedder or Word2vecEmbedder.
 
-            
-            
-            dropout (float): Dropout rate. 
         Args:
-            embedding_size (int): Dimensionality of word embeddings in EmbLayer/Word2vec. 
+            embedding_size (int, optional): Dimensionality of word embeddings in EmbLayer/Word2vec. 
                                   Defaults to 100.
-            output_size (int): Number of filters per filter size and nodes in final linear layer. 
-                               Defaults to 100.
-            kernels (list[int]): List of filter sizes. Total number of filters becomes
+            output_size (int, optional): Number of filters per filter size and nodes in final linear layer. 
+                               Defaults to 200.
+            kernels (list[int], optional): List of filter sizes. Total number of filters becomes
                                  len(kernels)*output_size. Defaults to [2,3,5,7,10].
             batch_size (int, optional): Batch size for training model. Defaults to 64.
             dropout (float, optional): Dropout rate for training model. Defaults to 0.1.
@@ -469,7 +465,7 @@ class CNNModel:
             learning_rate (float, optional): Initial learning rate for training model. 
                                              Defaults to 0.001.
             tau_good (float, optional): Tau_good to use for training model. Defaults to 0.2.
-            tau_bad (float, optional): Tau_good to use for training model. Defaults to -0.2.
+            tau_bad (float, optional): Tau_bad to use for training model. Defaults to -0.2.
         """                       
         self.name = 'CNN'
         self.storage_format = ''
@@ -526,8 +522,8 @@ class EmptyModel:
         data = ReportData(path, apply=False, print_progress=print_progress)
         for element in data:
             yield {'id': element['__key__'], 
-                   'z_r': embedder.embed(element['report.pyd']), 
-                   'z_s': embedder.embed(element['summary.pyd'])}
+                   'z_r': embedder._embed(element['report.pyd']), 
+                   'z_s': embedder._embed(element['summary.pyd'])}
     
 
 class SummaryQualityModel:
@@ -613,15 +609,15 @@ class SummaryQualityModel:
 
     def prepare_data(self, dataname, data, overwrite=False, overwrite_emb=False, 
                            train_embedder=False):
-        """Prepare neural network for training. Will pre-process data (if not already done), 
-        train embedder models (if train_embedder=True) and create embeddings for input data 
-        (if not already done). These embeddings will be stored, such that neural networks can
-        be trained on them directly. 
+        """Prepare for training neural network part of model. Will pre-process data (if not 
+        already done), train embedder models (if train_embedder=True) and create embeddings for 
+        input data (if not already done). These embeddings will be stored, such that neural 
+        networks can be trained on them directly. 
 
         Args:
             dataname (str): A name for the data to be used. Will determine the path for saving
                             data. 
-            data (iterable[SummaryReport]/LabelledReportData): Data to prepare for training. 
+            data (iterable[SummaryReport]/LabelledReportData): Data to prepare for training/testing. 
             overwrite (bool, optional): Boolean indicator of whether existing pre-processed data
                                         should be overwritten. If False, the data at path will be
                                         used, even if it does not correspond to the input 'data'. 
@@ -632,7 +628,7 @@ class SummaryQualityModel:
                                              Defaults to False.
 
         Returns:
-            str: Path for embedded data, ready for training neural network. 
+            str: Path to embedded data, ready for training neural network. 
         """
         if dataname == None:
             return None
@@ -667,8 +663,8 @@ class SummaryQualityModel:
         self.model._train(train_path, val_path, emb_params=self.embedder.params)
 
     def embed(self, data_name, data, overwrite=False, print_progress=True, overwrite_emb=False):
-        """Return memory-friendly generator for embedded reports and summaries, ready for 
-        measuring quality (cossim). 
+        """Return memory-friendly generator for embedded reports and summaries into the conceptual  
+        summary content space (see master thesis), ready for measuring quality (cossim). 
 
         Args:
             data_name (str): Name of data to embed.
@@ -683,8 +679,8 @@ class SummaryQualityModel:
                                             overwritten. Defaults to False.
 
         Returns:
-            generator[dict{'id', 'z_r', 'z_s'}]: Return generator with embedder reports and 
-                                                 summaries. 
+            generator[dict{'id', 'z_r', 'z_s'}]: Return memory friendly generator with 
+                                                 embedder reports and summaries. 
         """
         path = self.prepare_data(data_name, data, overwrite=overwrite, overwrite_emb=overwrite_emb)
         return self.model._embed(path, self.embedder, print_progress)
@@ -699,7 +695,7 @@ class SummaryQualityModel:
                                         'data_name' should be overwritten. 
                                         Defaults to False.
             overwrite_emb (bool, optional): Whether existing embeddings from embedder models
-                                            with name 'data_name' should be 
+                                            with data name 'data_name' should be 
                                             overwritten. Defaults to False.
 
         Returns:
@@ -717,7 +713,8 @@ class SummaryQualityModel:
         return pd.Series(qualities, index=keys)
 
     def save(self, modelname='default'):
-        """Save model, using pickle. 
+        """Save model, using pickle. Not well tested, current implementation might have trouble 
+        with saving, especially when models are large. 
 
         Args:
             modelname (str, optional): Save to path based on modelname. Defaults to 'default'.
@@ -728,7 +725,7 @@ class SummaryQualityModel:
             pickle.dump(self, f)
 
     def load(self, modelname='default'):
-        """Load model, using pickle
+        """Load model, using pickle.
 
         Args:
             modelname (str, optional): Load from path with based on modelname. 
