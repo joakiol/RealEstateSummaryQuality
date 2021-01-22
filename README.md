@@ -496,7 +496,27 @@ This documentation includes a short description of all classes and functions tha
   
 -   #### `class Doc2vecEmbedder(dim=100, window=6, mc=20, workers=4, dm=0, epochs=50)`  
   
+    Vocabulary embedder, for use together with CNN when making our own word embeddings. 
+  
+    **Arguments**  
+    - **`dim`**  `(int, optional)`: Dimensionality of doc embeddings. Defaults to 100.
+    - **`window`**  `(int, optional)`: Window size in Word2vec. Defaults to 6.
+    - **`mc`**  `(int, optional)`: Number of times word must appear to be included in vocabulary. Defaults to 20.
+    - **`workers`**  `(int, optional)`: Workers in training process. Defaults to 4.
+    - **`dm`**  `(int, optional)`: Whether PV-DM version should be used. Defaults to 0 (PV-DBOW).
+    - **`epochs`**  `(int, optional)`: Number of training epochs in Doc2vec. Defaults to 50.
+    
+    
+-   #### `class VocabularyEmbedder(vocab_length=20000)`  
+  
     Doc2vec embedder, to be used together with FFN or LSTM. 
+  
+    **Argument `vocab_length`**  `(int, optional)`: Vocabulary size. Defaults to 20000.
+    
+    
+-   #### `class Word2vecEmbedder(dim=100, window=10, min_count=20, workers=4, epochs=50)`  
+  
+    Vocabulary embedder, for use together with CNN when making our own word embeddings. 
   
     **Arguments**  
     - **`dim`**  `(int, optional)`: Dimensionality of doc embeddings. Defaults to 500.
@@ -506,15 +526,3 @@ This documentation includes a short description of all classes and functions tha
     - **`dm`**  `(int, optional)`: Whether PV-DM version should be used. Defaults to 0 (PV-DBOW).
     - **`epochs`**  `(int, optional)`: Number of training epochs in Doc2vec. Defaults to 50.
     
-    
--   #### `class Doc2vecEmbedder(dim=100, window=6, mc=20, workers=4, dm=0, epochs=50)`  
-  
-    Doc2vec embedder, to be used together with FFN or LSTM. 
-  
-    **Arguments**  
-    - **`dim`**  `(int, optional)`: Dimensionality of doc embeddings. Defaults to 500.
-    - **`window`**  `(int, optional)`: Window size in Word2vec. Defaults to 10.
-    - **`mc`**  `(int, optional)`: Number of times word must appear to be included in vocabulary. Defaults to 20.
-    - **`workers`**  `(int, optional)`: Workers in training process. Defaults to 4.
-    - **`dm`**  `(int, optional)`: Whether PV-DM version should be used. Defaults to 0 (PV-DBOW).
-    - **`epochs`**  `(int, optional)`: Number of training epochs in Doc2vec. Defaults to 50.   
