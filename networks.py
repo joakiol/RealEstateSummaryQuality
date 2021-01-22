@@ -27,6 +27,7 @@ class NetworkTrainer:
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, update_step_every, gamma=0.1)
 
     def _training_step(self, train_loader):
+        """One training epoch for neural network. """
         trainLoss = 0
         trainAccuracy = 0
         length = 0
@@ -43,6 +44,7 @@ class NetworkTrainer:
         return trainLoss/length
 
     def _validation_step(self, val_loader):
+        """One validation epoch for neural network."""
         with torch.no_grad():
             self.model.eval()
             valLoss = 0
@@ -56,6 +58,8 @@ class NetworkTrainer:
         return valLoss/length
 
     def _unpack_data_train(self, element):
+        """This method is used by train method, to determine how training data should
+        be unpacked from webdataset format. """
         return (element['report.pth'], element['summary.pth'], element['labels.pth'])
 
     def train(self, train_path, val_path, collate=None):
@@ -93,6 +97,8 @@ class NetworkTrainer:
         return self.model
 
     def _unpack_data_test(self, element):
+        """This method is used by embed-method, to determine how test data should
+        be unpacked from webdataset format. """
         return (element['__key__'], element['report.pth'], element['summary.pth'])
 
     def embed(self, path, print_progress, collate=None):

@@ -33,9 +33,18 @@ class VocabularyEmbedder:
         self.doc_length = 0
 
     def _prepare_doc(self, doc):
+        """This is called by SummaryQualityModel, and determines how
+        input data should be pre-processed for this embedder."""
         return [word.lower() for word in nltk.word_tokenize(doc, language='norwegian')]
 
     def _train(self, data, overwrite):
+        """This is called by SummaryQualityModel, and trains the embedder.
+
+        Args:
+            data (ReportData): Pre-processed data (according to _prepare_doc) in format
+                               (iterable[dict{'__key__', 'report.pyd', 'summary.pyd'}])
+            overwrite (boolean): This argument is only used by Word2vecEmbedder. 
+        """        
         print("\nMaking Vocabulary...")
         fdist = nltk.FreqDist()
         for element in data:
@@ -52,6 +61,7 @@ class VocabularyEmbedder:
             self.vocabulary[word[0]] = idx + 1
 
     def _embed(self, doc):
+        """Called by SummaryQualityModel, determines how embedder should embed document. """
         idx_list = []
         for word in doc:
             if word in self.vocabulary.keys():
@@ -85,9 +95,14 @@ class Word2vecEmbedder:
         self.model = None
 
     def _prepare_doc(self, doc):
+        """This is called by SummaryQualityModel, and determines how
+        input data should be pre-processed for this embedder."""
         return [word.lower() for word in nltk.word_tokenize(doc, language='norwegian')]
 
     def _store_sentences(self, element):
+        """For technical reasons, Word2vec must make its own training dataset. (see 
+        documentation under Word2vecEmbedder._train(). This function is used by _train
+        to determine how this training dataset should be made (list of tokenized sentences). """
         if isinstance(element, tuple):
             report = element[0]
             labels = element[1]
@@ -103,13 +118,30 @@ class Word2vecEmbedder:
         return out
     
     def _get_list_of_docs(self, element):
+        """Technical funtion, adds list of sentences in report and
+        summary. When used together with 
+        BufferShuffler, we get an iterable of all sentences, which
+        is the appropriate input for Word2vec training with gensim. """
         return element['report.pyd'] + element['summary.pyd']
 
     def _apply(self, element):
+        """Used in _train when using BufferShuffler. In this case, we have pre-processed
+        data to appropriate format already, so no transformation is needed. """
         return element
 
     def _train(self, data, input_data, overwrite):
+        """This is called by SummaryQualityModel, and trains the embedder.
 
+        Args:
+            data (ReportData): Pre-processed data (according to _prepare_doc) in format
+                               (iterable[dict{'__key__', 'report.pyd', 'summary.pyd'}])
+            overwrite (boolean): For technical reasons, the Word2vecEmbedder must make its own
+                                 training dataset (it was difficult to implement such that 
+                                 SummaryQualityModel did this for Word2vecEmbedder, which
+                                 is the case for the other Embedder models). 
+                                 Overwrite argument is then necessary to determine if 
+                                 existing pre-processed dataset should be overwritten. 
+        """     
         self.doc_length = 0
         print("\nFinding max length document...")
         for element in data:
@@ -136,7 +168,7 @@ class Word2vecEmbedder:
        
 
     def _embed(self, doc):
-
+        """Called by SummaryQualityModel, determines how embedder should embed document. """
         idx_list = []
 
         for word in doc:
@@ -167,9 +199,13 @@ class TFIDFEmbedder:
         self.unique_name = 'TFIDF_nb%s_na%s_fmf%s_rs%s' % (self.no_below, self.remove_stopwords)
 
     def _prepare_doc(self, doc):
+        """This is called by SummaryQualityModel, and determines how
+        input data should be pre-processed for this embedder."""
         return [word.lower() for word in nltk.word_tokenize(doc, language='norwegian')]
 
     def _get_words(self, element):
+        """This and _get_bow is used by BufferShuffler to transform input from pre-processed 
+        format (list of words) to appropriate format for training using gensim. """
         if isinstance(element, dict):
             element = element['doc']
         if self.remove_stopwords:
@@ -180,12 +216,20 @@ class TFIDFEmbedder:
         return doc
 
     def _get_bow(self, element):
+        """This and _get_words is used by BufferShuffler to transform input from pre-processed 
+        format (list of words) to appropriate format for training using gensim. """
         element = self._get_words(element)
         element = self.word_dict.doc2bow(element)
         return self.tf_idf_model[element]
 
     def _train(self, data, input_data, overwrite):
+        """This is called by SummaryQualityModel, and trains the embedder.
 
+        Args:
+            data (ReportData): Pre-processed data (according to _prepare_doc) in format
+                               (iterable[dict{'__key__', 'report.pyd', 'summary.pyd'}])
+            overwrite (boolean): This argument is only used by Word2vecEmbedder. 
+        """     
         data_for_dict = BufferShuffler(data, self._get_words, buffer_size=1000)
         data_for_train = BufferShuffler(data, self._get_bow, buffer_size=1000)
 
@@ -201,6 +245,7 @@ class TFIDFEmbedder:
         self.model = TfidfModel(dictionary=self.word_dict, smartirs='nfc')
 
     def _embed(self, doc):
+        """Called by SummaryQualityModel, determines how embedder should embed document. """
         bow = self._get_bow(doc)
         z = np.zeros(self.dim)
         for element in bow:
@@ -236,9 +281,13 @@ class LSAEmbedder:
                                                                self.fmf, self.remove_stopwords)
 
     def _prepare_doc(self, doc):
+        """This is called by SummaryQualityModel, and determines how
+        input data should be pre-processed."""
         return [word.lower() for word in nltk.word_tokenize(doc, language='norwegian')]
 
     def _get_words(self, element):
+        """This and _get_bow is used by BufferShuffler to transform input from pre-processed 
+        format (list of words) to appropriate format for training using gensim. """
         if isinstance(element, dict):
             element = element['doc']
         if self.remove_stopwords:
@@ -249,12 +298,20 @@ class LSAEmbedder:
         return doc
 
     def _get_bow(self, element):
+        """This and _get_words is used by BufferShuffler to transform input from pre-processed 
+        format (list of words) to appropriate format for training using gensim. """
         element = self._get_words(element)
         element = self.word_dict.doc2bow(element)
         return self.tf_idf_model[element]
 
     def _train(self, data, input_data, overwrite):
+        """This is called by SummaryQualityModel, and trains the embedder.
 
+        Args:
+            data (ReportData): Pre-processed data (according to _prepare_doc) in format
+                               (iterable[dict{'__key__', 'report.pyd', 'summary.pyd'}])
+            overwrite (boolean): This argument is only used by Word2vecEmbedder. 
+        """     
         data_for_dict = BufferShuffler(data, self._get_words, buffer_size=1000)
         data_for_train = BufferShuffler(data, self._get_bow, buffer_size=1000)
 
@@ -269,7 +326,7 @@ class LSAEmbedder:
         self.model = LsiModel(corpus=data_for_train, num_topics=self.dim, id2word=self.word_dict)
 
     def _embed(self, doc):
-
+        """Called by SummaryQualityModel, determines how embedder should embed document. """
         bow = self._get_bow(doc)
         z = np.zeros(self.dim)
         for element in self.model[bow]:
@@ -303,13 +360,24 @@ class Doc2vecEmbedder:
                                                                 self.mc, self.dm, self.epochs)
 
     def _prepare_doc(self, doc):
+        """This is called by SummaryQualityModel, and determines how
+        input data should be pre-processed."""
         return [word.lower() for word in nltk.word_tokenize(doc, language='norwegian')]
 
     def _get_tagged_doc(self, element):
+        """This is used by BufferShuffler to transform input from pre-processed 
+        format (dict{'id':<any id>, 'doc':<words>}) to appropriate format for training 
+        when using gensim. """
         return TaggedDocument(words=element['doc'], tags=[element['id']])
 
     def _train(self, data, input_data, overwrite):
+        """This is called by SummaryQualityModel, and trains the embedder.
 
+        Args:
+            data (ReportData): Pre-processed data (according to _prepare_doc) in format
+                               (iterable[dict{'__key__', 'report.pyd', 'summary.pyd'}])
+            overwrite (boolean): This argument is only used by Word2vecEmbedder. 
+        """     
         data = BufferShuffler(data, self._get_tagged_doc, buffer_size=1000)
 
         print("\nBuilding Doc2vec vocabulary")
@@ -323,6 +391,7 @@ class Doc2vecEmbedder:
                          epochs=self.epochs, callbacks=[epochprinter])
 
     def _embed(self, doc):
+        """Called by SummaryQualityModel, determines how embedder should embed document. """
         return self.model.infer_vector(doc)
  
 class FFNModel:
@@ -353,20 +422,28 @@ class FFNModel:
         self.tau_bad = tau_bad
 
     def _get_documents(self, report):
+        """Called by SummaryQualityModel. Determines what a document is for the embedder. 
+        E.g. for FFN model, a document is the entire report/summary, while for LSTM model, 
+        a document is a section/sentence. """
         return report.get_report_raw(), report.get_summary_raw()
 
     def _get_list_of_documents(self, element):
+        """Called by SummaryQualitModel. Returns a list of all documents for each real 
+        estate condition report. These will be unpacked by BufferShuffler when training
+        embedder models. """
         doc1 = {'id': '%s_report' % element['__key__'], 'doc': element['report.pyd']}
         doc2 = {'id': '%s_summary' % element['__key__'], 'doc': element['summary.pyd']}
         return [doc1, doc2]
 
     def _train(self, train_path, val_path, emb_params):
+        """Train neural network model on data in path. """
         model = FFN(emb_params, self.layers, self.dropout)
         self.trainer = NetworkTrainer(model, self.tau_good, self.tau_bad, self.batch_size, 
                                       self.learning_rate, self.update_step_every, self.epochs)
         self.model = self.trainer.train(train_path, val_path)
 
     def _embed(self, path, embedder, print_progress):
+        """Use neural network model to embed data at path"""
         if self.trainer == None:
             raise RuntimeError("Model is not trained. Train model before embedding. ")
         return self.trainer.embed(path, print_progress)
@@ -408,10 +485,16 @@ class LSTMModel:
         self.trainer = None
 
     def _get_documents(self, report):
+        """Called by SummaryQualityModel. Determines what a document is for the embedder. 
+        E.g. for FFN model, a document is the entire report/summary, while for LSTM model, 
+        a document is a section/sentence. """
         return report.get_sections(), report.get_summary_sentences()
         
 
     def _get_list_of_documents(self, element):
+        """Called by SummaryQualitModel. Returns a list of all documents for each real 
+        estate condition report. These will be unpacked by BufferShuffler when training
+        embedder models. """
         doc1 = [{'id': '%s_report_%s' % (element['__key__'], i),
                  'doc': element['report.pyd'][i]} for i in range(len(element['report.pyd']))]
         doc2 = [{'id': '%s_summary_%s' % (element['__key__'], i),
@@ -419,6 +502,8 @@ class LSTMModel:
         return doc1 + doc2
 
     def _collate_train(self, batch):
+        """Used for PackedSequence stuff, convenient with different-length sequences
+        in batches for LSTM. """
         batch_z_r = [item[0] for item in batch]
         batch_z_s = [item[1] for item in batch]
         z_r, z_s = pack_sequence(batch_z_r, enforce_sorted=False), pack_sequence(batch_z_s, enforce_sorted=False)
@@ -426,7 +511,7 @@ class LSTMModel:
         return z_r, z_s, labels
 
     def _train(self, train_path, val_path, emb_params):
-
+        """Train neural network model on data in path. """
         model = LSTM(emb_params, self.lstm_dim, self.num_lstm, self.bi_dir,
                                  self.output_dim, self.dropout)
         self.trainer = NetworkTrainer(model, self.tau_good, self.tau_bad, self.batch_size, 
@@ -434,6 +519,8 @@ class LSTMModel:
         self.model = self.trainer.train(train_path, val_path, collate=self._collate_train)
         
     def _collate_test(self, batch):
+        """Used for PackedSequence stuff, convenient with different-length sequences
+        in batches for LSTM. """
         batch_z_r = [item[1] for item in batch]
         batch_z_s = [item[2] for item in batch]
         z_r, z_s = pack_sequence(batch_z_r, enforce_sorted=False), pack_sequence(batch_z_s, enforce_sorted=False)
@@ -441,7 +528,7 @@ class LSTMModel:
         return keys, z_r, z_s
         
     def _embed(self, path, embedder, print_progress):
-
+        """Use neural network model to embed data at path"""
         if self.trainer == None:
             raise RuntimeError("Model is not trained. Train model before embedding. ")
 
@@ -482,20 +569,26 @@ class CNNModel:
         self.trainer = None
         
     def _get_documents(self, report):
+        """Called by SummaryQualityModel. Determines what a document is for the embedder. 
+        E.g. for FFN model, a document is the entire report/summary, while for LSTM model, 
+        a document is a section/sentence. """
         return report.get_report_raw(), report.get_summary_raw()
 
     def _get_list_of_documents(self, element):
+        """Called by SummaryQualitModel. Returns a list of all documents for each real 
+        estate condition report. These will be unpacked by BufferShuffler when training
+        embedder models. """
         return element
 
     def _train(self, train_path, val_path, emb_params):
-
+        """Train neural network model on data in path. """
         model = CNN(emb_params, self.embedding_size, self.output_size, self.kernels, self.dropout)
         self.trainer = NetworkTrainer(model, self.tau_good, self.tau_bad, self.batch_size, 
                                       self.learning_rate, self.update_step_every, self.epochs)
         self.model = self.trainer.train(train_path, val_path)
 
     def _embed(self, path, embedder, print_progress):
-
+        """Use neural network model to embed data at path"""
         if self.trainer == None:
             raise RuntimeError("Model is not trained. Train model before embedding. ")
 
@@ -508,17 +601,25 @@ class EmptyModel:
         self.storage_format = ''
 
     def _get_documents(self, report):
+        """Called by SummaryQualityModel. Determines what a document is for the embedder. 
+        E.g. for FFN model, a document is the entire report/summary, while for LSTM model, 
+        a document is a section/sentence. """
         return report.get_report_raw(), report.get_summary_raw()
 
     def _get_list_of_documents(self, element):
+        """Called by SummaryQualitModel. Returns a list of all documents for each real 
+        estate condition report. These will be unpacked by BufferShuffler when training
+        embedder models. """
         doc1 = {'id': '%s_report' % element['__key__'], 'doc': element['report.pyd']}
         doc2 = {'id': '%s_summary' % element['__key__'], 'doc': element['summary.pyd']}
         return [doc1, doc2]
 
     def _train(self, train, val, emb_params):
+        """Train neural network model on data in path. """
         pass
 
     def _embed(self, path, embedder, print_progress):
+        """Use neural network model to embed data at path"""
         data = ReportData(path, apply=False, print_progress=print_progress)
         for element in data:
             yield {'id': element['__key__'], 
@@ -533,7 +634,7 @@ class SummaryQualityModel:
 
         Args:
             embedder (<any>Embedder): Embedder model to use in summary quality model.
-            model (<any>Model, optional): Nerual network model to use together with embedder in 
+            model (<any>Model, optional): Neural network model to use together with embedder in 
                                           summary quality model. Defaults to EmptyModel (baseline).
         """        
         self.embedder = embedder
@@ -542,7 +643,10 @@ class SummaryQualityModel:
         self.embedded_path = 'models/%s/data/%s' % (model.name, embedder.unique_name)
 
     def _store_documents(self, element):
-
+        """This function describes how data should be pre-processed. Calls on 
+        model._get_documents to determine what the documents are (e.g. report and summary
+        or report sections and summary sentences), and calls on embedder._prepare_doc 
+        to determine how each document should be stored (e.g. raw string, list of words."""
         if isinstance(element, tuple):
             report = element[0]
             labels = element[1]
@@ -568,7 +672,9 @@ class SummaryQualityModel:
         
 
     def _store_embeddings(self, element):
-
+        """This function calls on embedder._embed for creating embeddings of the 
+        pre-processed documents. Stores embeddings with/without labels as 
+        torch tensors, such that it is easy to train neural networks. """
         out = {}
         out['__key__'] = element['__key__']
 
@@ -591,11 +697,13 @@ class SummaryQualityModel:
 
 
     def _create_dataset(self, dataname, data, overwrite):
+        """Creates pre-processed dataset of ReportData type. """
         data_path = '%s_%s' % (self.storage_path, dataname)
         ReportData(data_path).create(data=data, overwrite=overwrite, apply=self._store_documents)
         return data_path
 
     def _create_embedded_dataset(self, dataname, input_path, overwrite):
+        """Creates embeddings (by embedder part of SummaryQualityModel) of ReportData type."""
         if self.model.name == 'Baseline':
             return input_path
         input_data = ReportData(input_path, apply=False)
@@ -604,6 +712,8 @@ class SummaryQualityModel:
         return data_path
 
     def _train_embedder(self, data_path, input_data, overwrite):
+        """Call to train the embedder. Creates appropriate dataset and calls for 
+        embedder._train. """
         data = ReportData(data_path, apply=self.model._get_list_of_documents)
         self.embedder._train(data, input_data, overwrite)
 

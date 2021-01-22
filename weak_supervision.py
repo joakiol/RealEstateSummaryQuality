@@ -127,6 +127,8 @@ class WSLabelModel:
         plt.show()
         
     def _prepare_for_labeling(self, data):
+        """Used by train and predict method. Calls on function in labeling_functions.py, which
+        processes data and creates a pd.DataFrame with all relevant info for labeling functions."""
         return prepare_data_for_labeling_functions(data)
 
     def save(self, modelname='default'):

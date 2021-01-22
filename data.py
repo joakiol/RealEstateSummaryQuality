@@ -186,9 +186,11 @@ class ReportData:
         return self
 
     def _unpack_report(self, element):
+        """Default apply function, which unpacks data from standard webdataset format."""
         return element['report.pyd']
 
     def __iter__(self):   
+        """Determine how iterator should be based on input arguments."""
         data = wds.Dataset('%s/data.tar' % self.path).decode()
         if self.shuffle != False: 
             data = data.shuffle(self.shuffle)
@@ -207,6 +209,8 @@ class ReportData:
         return self.length
 
     def _prepare_report_from_ConditionReport(self, condition_report):
+        """Default apply-funtion in create method. Transforms a ConditionReport object
+        to a SummaryReport object, and return in format for storing using webdataset."""
         report = SummaryReport(condition_report)
         if len(report.condition) > 0 and len(report.summary) > 0:
             return {'__key__': report.id, 'report.pyd': report}

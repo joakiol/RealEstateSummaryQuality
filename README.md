@@ -12,7 +12,7 @@ To work with this project, the necessary files should be copied into the working
 - **common.py**: Classes for containing real-estate condition reports. 
 - **data.py**: Classes for making, storing and iterating through datasets. 
 - **weak_supervision.py**: Implements a weak supervision label model based on the Snorkel-framework, used for making labels. 
-- **labeling_functions.py**: Contains the labeling functions (with helper functions) that the label model in weak_supervision.py is based on. 
+- **labelling_functions.py**: Contains the labelling functions (with helper functions) that the label model in weak_supervision.py is based on. 
 - **models.py**: Implements the various models used in this work. 
 - **networks.py**: Implements neural network architectures used by the models in `models.py`. 
 - **utils.py**: Contains useful functions for analysing performance, and various other stuff. 
@@ -50,7 +50,7 @@ for idx, report in enumerate(data):
 
 ### Making weak supervision labels
 
-Now that a dataset of appropriate structure has been created, we can train a weak supervision label model to make noisy labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
+Now that a dataset with an appropriate structure has been created, we can train a weak supervision label model to make noisy labels. Note that the current implementation expects the following files to exist: './data/VenduData/matched_policies.zip' and 'data/VenduData/claims.csv'. 
 
 ```python
 from weak_supervision import WSLabelModel
@@ -69,12 +69,12 @@ label_model = WSLabelModel().load(modelname='default')
 labels = label_model.predict_training_set()
 ```
 
-We analyse our label model and labeling functions the following way: 
+We analyse our label model and labelling functions the following way: 
 
 ```python
-print("\nLabeling function analysis:")
+print("\nlabelling function analysis:")
 label_model.analyse_training_set()
-print("\nEstimated labeling function accuracies:")
+print("\nEstimated labelling function accuracies:")
 label_model.print_estimated_accuracies()
 label_model.plot_training_labels()
 ```
@@ -122,7 +122,7 @@ q_val.to_csv('predictions/LSA+LinTrans_val.csv')
 q_test.to_csv('predictions/LSA+LinTrans_test.csv')
 
 ```
-Note that the train-method by default always performs steps 2-4, while step 1 is only performed if it has not been performed before. The steps can be controlled the following way: 
+Note that the train-method by default always performs steps 2-4, while step 1 is only performed if it has not been performed before. The steps can be controlled in the following way: 
 
 ```python
 # Only step 1: 
@@ -154,7 +154,7 @@ We evaluate our models the following way:
 ```python
 import pandas as pd
 
-# Get qualitites for val and test set from saved files
+# Get qualities for val and test set from saved files
 quality_val = pd.read_csv('predictions/LSA+LinTrans_val.csv', index_col=0, squeeze=True)
 quality_test = pd.read_csv('predictions/LSA+LinTrans_test.csv', index_col=0, squeeze=True)
 
@@ -163,7 +163,7 @@ loss = ut.noise_aware_cosine_loss(quality_test, labels_test, 0.2, -0.2)
 best_threshold = ut.get_best_threshold(quality_val, labels_val)
 acc, prec, rec, f1 = ut.classification_scores(quality_test, labels_test, best_threshold)
 
-# Print loss and classification scores and plot distribution of summary qualitity
+# Print loss and classification scores and plot distribution of summary quality
 print(f"Loss: {loss:.3f}")
 print(f"acc: {acc:.3f}, prec: {prec:.3f}, rec: {rec:.3f}, f1: {f1:.3f}")
 ut.plot_quality(quality_test, labels=labels_test, title='LSA+LinTrans', show=True)
@@ -297,12 +297,12 @@ This documentation includes a short description of all classes and functions tha
   
 -   #### `class ReportData(path, print_progress=True, shuffle_buffer_size=1, apply=None, batch_size=1, collate=None)`
   
-    Iterable class for storing and iterating over data. Used extensively in this project for storing data in different formats that makes training faster and more practical. Takes a path as input, and can either iterate over existing data at this path, or create new data to path. Various arguments for different use cases. Stores data in WebDataset format (tar archives), for memory-friendly reading. 
+    Iterable class for storing and iterating over data. Used extensively in this project for storing data in different formats that make training faster and more practical. Takes a path as input, and can either iterate over existing data at this path, or create new data to path. Various arguments for different use cases. Stores data in WebDataset format (tar archives), for memory-friendly reading. 
   
     **Arguments**  
     - **`path`**  `(str)`: Path to store/read data to/from. 
     - **`print_progress`**  `(bool, optional)`: Whether to print progress in iterations. Defaults to True.
-    - **`shuffle_buffer_size`**  `(int, optional)`: WebDataset shuffles data by putting elements into a buffer with given size. Defaults to 1 (no shuffle).
+    - **`shuffle_buffer_size`**  `(int, optional)`: WebDataset shuffles data by putting elements into a buffer with a given size. Defaults to 1 (no shuffle).
     - **`apply`**  `(func, optional)`: Apply function to elements in data. Defaults to None (no func).
     - **`batch_size`**  `(int, optional)`: Data can be loaded in batches. Defaults to 1 (no batching).
     - **`collate`**  `(func, optional)`: Apply func to batches. Used for PackedSequence stuff with LSTM. Defaults to None.
@@ -369,14 +369,14 @@ This documentation includes a short description of all classes and functions tha
           
     -   **`WSLabelModel.analyse_training_set(latexpath=None)`**  
     
-        Perform analysis of labeling functions based on the data that the label model was trained on. Prints coverage, overlap and conflict rates for the labeling functions. 
+        Perform analysis of labelling functions based on the data that the label model was trained on. Prints coverage, overlap and conflict rates for the labelling functions. 
         
         - **Parameter `latexpath`**  `(str, optional)`: Save analysis to txt file, in latex table format. Defaults to None (no saving to file).
         
         
     -   **`WSLabelModel.print_estimated_accuracies()`**  
     
-        Print estimated accuracies for the labeling functions, based on the data that the label model was trained on.
+        Print estimated accuracies for the labelling functions, based on the data that the label model was trained on.
         
         
     -   **`WSLabelModel.plot_training_labels(name=None)`**  
@@ -431,7 +431,7 @@ This documentation includes a short description of all classes and functions tha
     - **`title`**  `(str, optional)`: Title. Defaults to False (No title).
     - **`lab`**  `(bool, optional)`: Whether legends should be used in plot. Defaults to False.
     - **`show`**  `(bool, optional)`: Whether to show plot. Defaults to True.
-    - **`all`**  `(bool, optional)`: Whether distribution of all qualitites should be shown in grey background. Defaults to False.
+    - **`all`**  `(bool, optional)`: Whether distribution of all qualities should be shown in grey background. Defaults to False.
     - **`density`**  `(bool, optional)`: Whether normalization of distributions should be performed. Defaults to True.
     - **`xlim`**  `(bool, optional)`: Whether x-axis should be set to [-1, 1]. Defaults to True.
     
@@ -637,7 +637,7 @@ This documentation includes a short description of all classes and functions tha
         
     -   **`SummaryQualityModel.predict(data_name, data, overwrite=False, overwrite_emb=True)`**  
     
-        Return predicted qualitites for input data. 
+        Return predicted qualities for input data. 
         
         **Arguments** 
         - **`data_name`**  `(str)`: A name for the data to predict quality of. Will determine the path for saving pre-processed data, as well as for saving embeddings by the embedder part of the summary quality model. 
