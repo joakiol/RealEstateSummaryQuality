@@ -37,12 +37,13 @@ class VocabularyEmbedder:
         input data should be pre-processed for this embedder."""
         return [word.lower() for word in nltk.word_tokenize(doc, language='norwegian')]
 
-    def _train(self, data, overwrite):
+    def _train(self, data, input_data, overwrite):
         """This is called by SummaryQualityModel, and trains the embedder.
 
         Args:
             data (ReportData): Pre-processed data (according to _prepare_doc) in format
                                (iterable[dict{'__key__', 'report.pyd', 'summary.pyd'}])
+            input_data (ReportData): Used by Word2vecEmbedder only. 
             overwrite (boolean): This argument is only used by Word2vecEmbedder. 
         """        
         print("\nMaking Vocabulary...")
@@ -135,6 +136,11 @@ class Word2vecEmbedder:
         Args:
             data (ReportData): Pre-processed data (according to _prepare_doc) in format
                                (iterable[dict{'__key__', 'report.pyd', 'summary.pyd'}])
+                               This contains the words of the documents, which the
+                               Word2vecEmbedder will embed by giving an index.
+            input_data (ReportData): For technical reasons (see below), Word2vecEmbedder
+                                     must prepare its own training set. This argument is included
+                                     to make the training dataset. 
             overwrite (boolean): For technical reasons, the Word2vecEmbedder must make its own
                                  training dataset (it was difficult to implement such that 
                                  SummaryQualityModel did this for Word2vecEmbedder, which
@@ -713,7 +719,8 @@ class SummaryQualityModel:
 
     def _train_embedder(self, data_path, input_data, overwrite):
         """Call to train the embedder. Creates appropriate dataset and calls for 
-        embedder._train. """
+        embedder._train. Includes input_data in argument since Word2vec
+        needs to make its own training set (technical detail). """
         data = ReportData(data_path, apply=self.model._get_list_of_documents)
         self.embedder._train(data, input_data, overwrite)
 
