@@ -15,7 +15,7 @@ To work with this project, the necessary files should be copied into the working
 - **labelling_functions.py**: Contains the labelling functions (with helper functions) that the label model in weak_supervision.py is based on. 
 - **models.py**: Implements the various models used in this work. 
 - **networks.py**: Implements neural network architectures used by the models in `models.py`. 
-- **utils.py**: Contains useful functions for analysing performance, and various other stuff. 
+- **utils.py**: Contains useful functions for analysing performance, and various other stuff.
 
 The necessary packages for these files are found in requirements.txt. 
 
